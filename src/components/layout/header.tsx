@@ -1,12 +1,11 @@
+import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import { LogOut, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ModeToggle from '@/components/mode-toggle'
 import { useAuth } from '@/hooks/use-auth'
-import { ROLES } from '@/constants/roles'
 import { ROUTES } from '@/constants/routes'
-import { useState } from 'react'
 
 const navItems = [
   { to: ROUTES.home, label: 'Trang chủ', end: true },
@@ -53,20 +52,6 @@ export default function Header() {
               </NavLink>
             </li>
           ))}
-          {user?.role === ROLES.ADMIN && (
-            <li>
-              <NavLink
-                to={ROUTES.adminQuestions}
-                className={({ isActive }) =>
-                  isActive
-                    ? 'text-foreground font-medium'
-                    : 'text-muted-foreground hover:text-foreground'
-                }
-              >
-                Quản trị
-              </NavLink>
-            </li>
-          )}
         </ul>
         <div className="ml-auto flex items-center gap-2">
           {isAuthenticated ? (

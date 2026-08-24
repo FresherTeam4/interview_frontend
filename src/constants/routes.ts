@@ -3,5 +3,4 @@ export const ROUTES = {
   about: '/about',
   login: '/login',
   register: '/register',
-  adminQuestions: '/admin/questions',
 } as const
