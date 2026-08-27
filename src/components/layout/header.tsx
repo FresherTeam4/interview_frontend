@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router'
+import { BriefcaseBusiness, Loader2, LogOut } from 'lucide-react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { LogOut, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import ModeToggle from '@/components/mode-toggle'
 import { useAuth } from '@/hooks/use-auth'
+import { cn } from '@/lib/utils'
 import { ROUTES } from '@/constants/routes'
 
-const navItems = [
+const publicNavItems = [
   { to: ROUTES.home, label: 'Trang chủ', end: true },
   { to: ROUTES.about, label: 'Giới thiệu', end: false },
 ]
@@ -15,6 +16,7 @@ const navItems = [
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
 
   async function handleLogout() {
@@ -31,32 +33,54 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b">
-      <nav className="mx-auto max-w-7xl flex items-center gap-6 px-4 h-14">
-        <Link to={ROUTES.home} className="font-semibold">
-          MockInterview
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:gap-6">
+        <Link to={ROUTES.home} className="flex shrink-0 items-center gap-2 font-semibold">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <BriefcaseBusiness className="size-4" />
+          </span>
+          <span className="hidden sm:inline">MockInterview</span>
         </Link>
-        <ul className="flex items-center gap-4 text-sm">
-          {navItems.map((item) => (
-            <li key={item.to}>
+
+        <ul className="flex min-w-0 items-center gap-1 text-sm">
+          {publicNavItems.map((item) => (
+            <li key={item.to} className="hidden md:block">
               <NavLink
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-foreground font-medium'
-                    : 'text-muted-foreground hover:text-foreground'
+                  cn(
+                    'inline-flex h-9 items-center rounded-md px-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                    isActive && 'bg-muted font-medium text-foreground',
+                  )
                 }
               >
                 {item.label}
               </NavLink>
             </li>
           ))}
+          {isAuthenticated && (
+            <li>
+              <NavLink
+                to={ROUTES.cvs}
+                className={({ isActive }) =>
+                  cn(
+                    'inline-flex h-9 items-center rounded-md px-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+                    (isActive || location.pathname.startsWith(ROUTES.profiles)) &&
+                      'bg-muted font-medium text-foreground',
+                  )
+                }
+              >
+                CV &amp; Hồ sơ
+              </NavLink>
+            </li>
+          )}
         </ul>
-        <div className="ml-auto flex items-center gap-2">
+
+        <div className="ml-auto flex items-center gap-1.5">
           {isAuthenticated ? (
             <>
-              <span className="hidden sm:inline text-sm text-muted-foreground">
+              <span className="hidden max-w-52 truncate text-sm text-muted-foreground lg:inline">
                 {user?.email}
               </span>
               <Button
@@ -64,13 +88,10 @@ export default function Header() {
                 size="sm"
                 onClick={handleLogout}
                 disabled={loggingOut}
+                aria-label="Đăng xuất"
               >
-                {loggingOut ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <LogOut className="h-4 w-4" />
-                )}
-                <span className="ml-1.5 hidden sm:inline">Đăng xuất</span>
+                {loggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
+                <span className="hidden xl:inline">Đăng xuất</span>
               </Button>
             </>
           ) : (
@@ -78,7 +99,7 @@ export default function Header() {
               <Button variant="ghost" size="sm" asChild>
                 <Link to={ROUTES.login}>Đăng nhập</Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button size="sm" asChild className="hidden sm:inline-flex">
                 <Link to={ROUTES.register}>Đăng ký</Link>
               </Button>
             </>
