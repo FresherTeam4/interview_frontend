@@ -17,7 +17,11 @@ import { getErrorMessage } from '@/api/api-error'
 import { useAuth } from '@/hooks/use-auth'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
 import { isCvInProgress, useCvDocuments } from '@/hooks/use-cv-documents'
-import { profileDetailPath, ROUTES } from '@/constants/routes'
+import { useSessions } from '@/hooks/use-interview-session'
+import { useJobDescriptions } from '@/hooks/use-job-descriptions'
+import { JD_MAX_PAGE_SIZE } from '@/constants/jd'
+import { profileDetailPath, ROUTES, sessionDetailPath } from '@/constants/routes'
+import { SESSION_STATUS_LABEL } from '@/constants/session'
 import type { CvDocument } from '@/types/cv'
 
 interface ReadinessStep {
@@ -39,14 +43,20 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const cvQuery = useCvDocuments()
   const profilesQuery = useCandidateProfiles()
+  const jdQuery = useJobDescriptions(0, JD_MAX_PAGE_SIZE)
+  const activeSessionsQuery = useSessions('ACTIVE', 0, 5)
 
   const documents = cvQuery.data ?? []
   const profiles = profilesQuery.data ?? []
+  const jdItems = jdQuery.data?.items ?? []
+  const activeSessions = activeSessionsQuery.data?.items ?? []
+  const totalActiveCount = activeSessionsQuery.data?.totalElements ?? activeSessions.length
   const latestCv = findLatestCv(documents)
   const parsingCount = documents.filter(isCvInProgress).length
   const confirmedProfile = profiles.find((profile) => profile.confirmedAt !== null) ?? null
-  const isPending = cvQuery.isPending || profilesQuery.isPending
-  const error = cvQuery.error ?? profilesQuery.error
+  const readyJd = jdItems.find((jd) => jd.status === 'READY') ?? null
+  const isPending = cvQuery.isPending || profilesQuery.isPending || jdQuery.isPending
+  const error = cvQuery.error ?? profilesQuery.error ?? jdQuery.error
 
   const steps: ReadinessStep[] = [
     {
@@ -75,6 +85,15 @@ export default function DashboardPage() {
       to: profiles[0] ? profileDetailPath(profiles[0].id) : ROUTES.profile,
       actionLabel: 'Kiểm tra hồ sơ',
     },
+    {
+      title: 'Tạo mô tả công việc (JD)',
+      description: readyJd
+        ? `JD đã sẵn sàng: ${readyJd.title}`
+        : 'Nhập hoặc tải JD để hệ thống sinh câu hỏi phù hợp với vị trí ứng tuyển.',
+      done: readyJd !== null,
+      to: ROUTES.jdCreate,
+      actionLabel: 'Tạo JD',
+    },
   ]
 
   const isReady = steps.every((step) => step.done)
@@ -91,6 +110,7 @@ export default function DashboardPage() {
           onRetry={() => {
             void cvQuery.refetch()
             void profilesQuery.refetch()
+            void jdQuery.refetch()
           }}
         />
       )
@@ -132,7 +152,7 @@ export default function DashboardPage() {
       <Card>
         <CardHeader>
           <CardTitle>Chuẩn bị hồ sơ</CardTitle>
-          <CardDescription>Xong ba bước này là có thể bắt đầu phỏng vấn.</CardDescription>
+          <CardDescription>Xong bốn bước này là có thể bắt đầu phỏng vấn.</CardDescription>
           {latestCv ? (
             <CardAction>
               <CvStatusBadge status={latestCv.status} />
@@ -147,17 +167,74 @@ export default function DashboardPage() {
           <CardTitle>Buổi phỏng vấn thử</CardTitle>
           <CardDescription>
             {isReady
-              ? 'Đã có hồ sơ được xác nhận. Chức năng phỏng vấn sẽ mở trong bản cập nhật tới.'
-              : 'Hoàn thành ba bước chuẩn bị ở trên để mở khoá buổi phỏng vấn.'}
+              ? 'Mọi thứ đã sẵn sàng! Bấm nút bên dưới để tạo phiên phỏng vấn.'
+              : 'Hoàn thành bốn bước chuẩn bị ở trên để mở khoá buổi phỏng vấn.'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button className="w-fit" disabled>
-            <Sparkles className="size-4" />
-            Bắt đầu phỏng vấn (sắp có)
-          </Button>
+        <CardContent className="flex flex-col gap-4">
+          {isReady ? (
+            <Button className="w-fit" asChild>
+              <Link to={ROUTES.sessionCreate}>
+                <Sparkles className="size-4" />
+                Bắt đầu phỏng vấn
+              </Link>
+            </Button>
+          ) : (
+            <Button className="w-fit" disabled>
+              <Sparkles className="size-4" />
+              Bắt đầu phỏng vấn
+            </Button>
+          )}
+
+          {/* Active Sessions */}
+          {activeSessions.length > 0 ? (
+            <div className="pt-3 border-t mt-2 flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Phiên phỏng vấn gần đây ({totalActiveCount})
+                </p>
+                <Button variant="ghost" size="sm" asChild className="text-xs h-7">
+                  <Link to={ROUTES.sessionList}>Xem tất cả</Link>
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2">
+                {activeSessions.slice(0, 3).map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 text-sm transition-colors hover:bg-muted/30"
+                  >
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{session.jobDescriptionTitle}</span>
+                        <span className="text-xs text-muted-foreground">#{session.id}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {SESSION_STATUS_LABEL[session.status]} •{' '}
+                        {session.status === 'READY'
+                          ? `${session.totalQuestionCount} câu hỏi sẵn sàng`
+                          : `${session.answeredQuestionCount}/${session.totalQuestionCount} câu đã trả lời`}
+                      </p>
+                    </div>
+                    <Button size="sm" asChild className="gap-1 text-xs shrink-0">
+                      <Link to={sessionDetailPath(session.id)}>
+                        {session.status === 'READY' ? 'Bắt đầu' : 'Tiếp tục'} →
+                      </Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {totalActiveCount > 3 ? (
+                <Button variant="outline" size="sm" asChild className="w-full text-xs mt-1">
+                  <Link to={ROUTES.sessionList}>
+                    Xem thêm {totalActiveCount - 3} phiên đang diễn ra khác →
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>
   )
 }
+

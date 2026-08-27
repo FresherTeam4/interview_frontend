@@ -1,4 +1,4 @@
-import { FileText, LayoutDashboard, UserRoundPen, type LucideIcon } from 'lucide-react'
+import { Briefcase, FileText, LayoutDashboard, Sparkles, UserRoundPen, type LucideIcon } from 'lucide-react'
 import { ROUTES } from '@/constants/routes'
 
 export interface NavItem {
@@ -14,4 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.home, label: 'Tổng quan', icon: LayoutDashboard, end: true },
   { to: ROUTES.cv, label: 'CV của tôi', icon: FileText },
   { to: ROUTES.profile, label: 'Hồ sơ', icon: UserRoundPen },
+  { to: ROUTES.jd, label: 'Mô tả công việc', icon: Briefcase },
+  { to: ROUTES.sessionList, label: 'Phỏng vấn', icon: Sparkles },
 ]
+
