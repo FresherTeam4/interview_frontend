@@ -46,11 +46,21 @@ function defaultMessageFor(status: number): string {
       return 'Không tìm thấy dữ liệu.'
     case 409:
       return 'Dữ liệu đã tồn tại hoặc đang xung đột.'
+    case 413:
+      return 'File vượt quá dung lượng cho phép.'
+    case 415:
+      return 'Định dạng file không được hỗ trợ.'
     case 422:
       return 'Dữ liệu không hợp lệ.'
     default:
       return status >= 500 ? 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.' : 'Đã có lỗi xảy ra.'
   }
+}
+
+/** Lấy thông điệp hiển thị được từ bất kỳ lỗi nào (API hoặc lỗi lạ). */
+export function getErrorMessage(error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): string {
+  if (isApiError(error)) return error.message
+  return error instanceof Error ? error.message : fallback
 }
 
 export function isApiError(error: unknown): error is ApiError {

@@ -1,17 +1,20 @@
 import { createBrowserRouter } from 'react-router'
-import RootLayout from '@/routes/root-layout'
 import AuthLayout from '@/routes/auth-layout'
 import GuestGuard from '@/routes/guest-guard'
+import RequireAuth from '@/routes/require-auth'
+import RootLayout from '@/routes/root-layout'
 import RouteErrorBoundary from '@/routes/route-error-boundary'
-import HomePage from '@/pages/home-page'
-import AboutPage from '@/pages/about-page'
+import CvPage from '@/pages/cv-page'
+import DashboardPage from '@/pages/dashboard-page'
 import LoginPage from '@/pages/login-page'
-import RegisterPage from '@/pages/register-page'
 import NotFoundPage from '@/pages/not-found-page'
+import ProfileDetailPage from '@/pages/profile-detail-page'
+import ProfilePage from '@/pages/profile-page'
+import RegisterPage from '@/pages/register-page'
 import { ROUTES } from '@/constants/routes'
 
 export const router = createBrowserRouter([
-  // Auth routes — layout riêng, không header/footer
+  // Auth — layout riêng, không header/footer
   {
     element: <GuestGuard />,
     children: [
@@ -24,15 +27,22 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // App routes — giữ nguyên RootLayout
+  // App — mọi trang đều yêu cầu đăng nhập; thêm chức năng mới = thêm 1 child ở đây
   {
-    path: ROUTES.home,
-    element: <RootLayout />,
-    errorElement: <RouteErrorBoundary />,
+    element: <RequireAuth />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'about', element: <AboutPage /> },
-      { path: '*', element: <NotFoundPage /> },
+      {
+        path: ROUTES.home,
+        element: <RootLayout />,
+        errorElement: <RouteErrorBoundary />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: ROUTES.cv, element: <CvPage /> },
+          { path: ROUTES.profile, element: <ProfilePage /> },
+          { path: ROUTES.profileDetail, element: <ProfileDetailPage /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
     ],
   },
 ])
