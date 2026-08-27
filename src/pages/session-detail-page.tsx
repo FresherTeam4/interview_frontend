@@ -56,7 +56,7 @@ export default function SessionDetailPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-5xl mx-auto w-full">
       <PageHeader
         title={`Phiên phỏng vấn${parsedId ? ` #${parsedId}` : ''}`}
         description="Theo dõi trạng thái phiên phỏng vấn."

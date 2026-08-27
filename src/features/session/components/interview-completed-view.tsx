@@ -1,10 +1,8 @@
-import { ArrowLeft, CheckCircle2, History, Sparkles } from 'lucide-react'
+import { CheckCircle2, History, Sparkles } from 'lucide-react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { ROUTES } from '@/constants/routes'
-import { INTERVIEW_DIFFICULTY_LABEL } from '@/constants/session'
-import RubricPreviewDialog from '@/features/session/components/rubric-preview-dialog'
 import type { InterviewSession } from '@/types/session'
 
 interface InterviewCompletedViewProps {
@@ -15,56 +13,37 @@ export default function InterviewCompletedView({ session }: InterviewCompletedVi
   const isScoring = session.status === 'SCORING'
 
   return (
-    <Card className="text-center">
-      <CardHeader className="flex flex-col items-center gap-2 pb-4">
-        <div className="flex size-14 items-center justify-center rounded-full bg-success/15 text-success">
-          <CheckCircle2 className="size-8" />
-        </div>
-        <CardTitle className="text-xl sm:text-2xl">
-          {isScoring ? 'Buổi phỏng vấn đang được tổng hợp!' : 'Chúc mừng! Bạn đã hoàn thành buổi phỏng vấn'}
-        </CardTitle>
-        <CardDescription className="max-w-md text-sm">
-          {isScoring
-            ? 'Hệ thống đang hoàn tất lưu trữ hội thoại và xử lý dữ liệu của phiên.'
-            : 'Toàn bộ câu trả lời của bạn đã được ghi nhận đầy đủ theo từng lượt đối thoại.'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center gap-6">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 max-w-lg w-full rounded-xl border bg-muted/20 p-4 text-sm text-left">
-          <div>
-            <p className="text-xs text-muted-foreground">Vị trí ứng tuyển</p>
-            <p className="font-semibold text-foreground truncate">{session.jobDescription.title}</p>
+    <Card className="border-success/30 bg-success/5 shadow-xs overflow-hidden">
+      <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-success text-success-foreground shadow-xs">
+            <CheckCircle2 className="size-5" />
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Độ khó</p>
-            <p className="font-semibold text-foreground">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Số câu đã hoàn thành</p>
-            <p className="font-semibold text-success">
-              {session.answeredQuestionCount} / {session.totalQuestionCount} câu
+          <div className="space-y-0.5">
+            <h2 className="font-semibold text-base text-foreground">
+              {isScoring
+                ? `Buổi phỏng vấn đã hoàn tất (${session.answeredQuestionCount}/${session.totalQuestionCount} câu)!`
+                : 'Chúc mừng! Bạn đã hoàn thành phỏng vấn'}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {isScoring
+                ? 'Hệ thống đang hoàn tất lưu trữ hội thoại và xử lý dữ liệu của phiên.'
+                : 'Toàn bộ câu trả lời của bạn đã được ghi nhận đầy đủ theo từng lượt đối thoại.'}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <RubricPreviewDialog />
-          <Button variant="outline" asChild>
+        <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          <Button size="sm" variant="outline" asChild className="text-xs gap-1.5">
             <Link to={ROUTES.sessionList}>
-              <History className="size-4" />
-              Xem lịch sử phỏng vấn
+              <History className="size-3.5" />
+              Lịch sử phiên
             </Link>
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild className="text-xs gap-1.5 shadow-xs">
             <Link to={ROUTES.sessionCreate}>
-              <Sparkles className="size-4" />
+              <Sparkles className="size-3.5" />
               Luyện phiên mới
-            </Link>
-          </Button>
-          <Button variant="ghost" asChild>
-            <Link to={ROUTES.home}>
-              <ArrowLeft className="size-4" />
-              Về trang chủ
             </Link>
           </Button>
         </div>
