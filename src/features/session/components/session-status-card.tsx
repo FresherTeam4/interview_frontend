@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getErrorMessage } from '@/api/api-error'
 import { useRetrySession, useStartSession } from '@/hooks/use-interview-session'
 import {
@@ -47,29 +47,29 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
 
   return (
     <Card>
-      <CardHeader className="flex-row items-start justify-between gap-2">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            {isGenerating ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
-            ) : isReady ? (
-              <CheckCircle2 className="size-5 text-success" />
-            ) : isFailed ? (
-              <AlertCircle className="size-5 text-destructive" />
-            ) : null}
-            Phiên phỏng vấn #{session.id}
-          </CardTitle>
-          <CardDescription>
-            {isGenerating
-              ? 'Hệ thống đang sinh bộ câu hỏi phỏng vấn. Trạng thái tự cập nhật, bạn không cần làm mới trang.'
-              : isReady
-                ? 'Bộ câu hỏi đã sẵn sàng! Bạn có thể bắt đầu buổi phỏng vấn.'
-                : isFailed
-                  ? 'Sinh câu hỏi thất bại. Bạn có thể thử lại.'
-                  : SESSION_STATUS_LABEL[session.status]}
-          </CardDescription>
-        </div>
-        <RubricPreviewDialog />
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          {isGenerating ? (
+            <Loader2 className="size-5 animate-spin text-primary" />
+          ) : isReady ? (
+            <CheckCircle2 className="size-5 text-success" />
+          ) : isFailed ? (
+            <AlertCircle className="size-5 text-destructive" />
+          ) : null}
+          Phiên phỏng vấn #{session.id}
+        </CardTitle>
+        <CardDescription>
+          {isGenerating
+            ? 'Hệ thống đang sinh bộ câu hỏi phỏng vấn. Trạng thái tự cập nhật, bạn không cần làm mới trang.'
+            : isReady
+              ? 'Bộ câu hỏi đã sẵn sàng! Bạn có thể bắt đầu buổi phỏng vấn.'
+              : isFailed
+                ? 'Sinh câu hỏi thất bại. Bạn có thể thử lại.'
+                : SESSION_STATUS_LABEL[session.status]}
+        </CardDescription>
+        <CardAction>
+          <RubricPreviewDialog />
+        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">

@@ -21,12 +21,14 @@ export default function RootLayout() {
   }, [location.pathname, navigate])
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-background">
       <Header />
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-8">
-        <Outlet />
-      </main>
-      <Footer />
+      <div id="main-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar flex flex-col justify-between">
+        <main className="mx-auto w-full max-w-7xl px-4 py-8 flex-1">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
     </div>
   )
 }

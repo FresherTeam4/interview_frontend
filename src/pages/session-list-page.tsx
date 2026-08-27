@@ -3,7 +3,7 @@ import { ArrowRight, History, Play, Plus, Sparkles } from 'lucide-react'
 import { Link } from 'react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import EmptyState from '@/components/empty-state'
@@ -26,83 +26,92 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
   const isGenerating = session.status === 'CREATED' || session.status === 'SCRIPT_GENERATING'
 
   return (
-    <Card className="transition-all hover:shadow-sm">
-      <CardHeader className="flex-row items-start justify-between gap-3 pb-3">
-        <div className="space-y-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold text-base truncate">
+    <Card className="flex flex-col justify-between transition-all hover:shadow-md hover:border-primary/30 h-full">
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0 flex-1">
+            <h3 className="font-semibold text-base leading-snug line-clamp-2">
               {session.jobDescriptionTitle}
-            </span>
-            <Badge
-              variant={
-                isReady || isCompleted
-                  ? 'default'
-                  : isInProgress
-                    ? 'secondary'
-                    : session.status === 'FAILED'
-                      ? 'destructive'
-                      : 'outline'
-              }
-              className="text-xs shrink-0"
-            >
-              {SESSION_STATUS_LABEL[session.status]}
-            </Badge>
+            </h3>
+            <p className="text-xs text-muted-foreground truncate">
+              {session.profileHeadline ?? `Hồ sơ #${session.profileId}`}
+            </p>
           </div>
-          <CardDescription className="text-xs truncate">
-            {session.profileHeadline ?? `Hồ sơ #${session.profileId}`}
-          </CardDescription>
+          <Badge
+            variant={
+              isReady || isCompleted
+                ? 'default'
+                : isInProgress
+                  ? 'secondary'
+                  : session.status === 'FAILED'
+                    ? 'destructive'
+                    : 'outline'
+            }
+            className="text-[11px] shrink-0 font-medium"
+          >
+            {SESSION_STATUS_LABEL[session.status]}
+          </Badge>
         </div>
-
-        <Button size="sm" asChild className="shrink-0 gap-1.5">
-          <Link to={sessionDetailPath(session.id)}>
-            {isReady ? (
-              <>
-                <Play className="size-3.5 fill-current text-primary-foreground" />
-                <span>Bắt đầu</span>
-              </>
-            ) : isInProgress ? (
-              <>
-                <Play className="size-3.5 fill-current" />
-                <span>Tiếp tục</span>
-              </>
-            ) : isGenerating ? (
-              <>
-                <Sparkles className="size-3.5" />
-                <span>Theo dõi</span>
-              </>
-            ) : (
-              <>
-                <span>Chi tiết</span>
-                <ArrowRight className="size-3.5" />
-              </>
-            )}
-          </Link>
-        </Button>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t pt-3 text-xs text-muted-foreground">
-          <div className="flex flex-wrap items-center gap-3">
-            <span>Độ khó: <strong className="text-foreground">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</strong></span>
-            <span>Hình thức: <strong className="text-foreground">{SESSION_MODE_LABEL[session.mode]}</strong></span>
-            <span>
-              Tiến độ:{' '}
-              <strong className="text-foreground">
-                {isReady
-                  ? `${session.totalQuestionCount} câu hỏi`
-                  : `${session.answeredQuestionCount}/${session.totalQuestionCount} câu`}
-              </strong>
-            </span>
+      <CardContent className="pt-0 flex flex-col gap-3">
+        {/* Metadata mini-grid */}
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 rounded-lg border bg-muted/20 p-2.5 text-xs text-muted-foreground">
+          <div className="truncate">
+            <span>Độ khó: </span>
+            <strong className="text-foreground font-medium">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</strong>
           </div>
-          <span>
-            {new Date(session.createdAt).toLocaleDateString('vi-VN', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
+          <div className="truncate">
+            <span>Hình thức: </span>
+            <strong className="text-foreground font-medium">{SESSION_MODE_LABEL[session.mode]}</strong>
+          </div>
+          <div className="truncate">
+            <span>Tiến độ: </span>
+            <strong className="text-foreground font-medium">
+              {isReady
+                ? `${session.totalQuestionCount} câu hỏi`
+                : `${session.answeredQuestionCount}/${session.totalQuestionCount} câu`}
+            </strong>
+          </div>
+          <div className="truncate">
+            <span>Thời gian: </span>
+            <strong className="text-foreground font-medium">
+              {new Date(session.createdAt).toLocaleDateString('vi-VN', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}
+            </strong>
+          </div>
+        </div>
+
+        {/* Action button */}
+        <div className="flex items-center justify-end pt-1">
+          <Button size="sm" asChild className="w-full sm:w-auto gap-1.5 shadow-xs text-xs font-medium">
+            <Link to={sessionDetailPath(session.id)}>
+              {isReady ? (
+                <>
+                  <Play className="size-3.5 fill-current" />
+                  <span>Bắt đầu phỏng vấn</span>
+                </>
+              ) : isInProgress ? (
+                <>
+                  <Play className="size-3.5 fill-current" />
+                  <span>Tiếp tục phỏng vấn</span>
+                </>
+              ) : isGenerating ? (
+                <>
+                  <Sparkles className="size-3.5" />
+                  <span>Theo dõi tiến trình</span>
+                </>
+              ) : (
+                <>
+                  <span>Xem chi tiết</span>
+                  <ArrowRight className="size-3.5" />
+                </>
+              )}
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -111,13 +120,14 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
 
 function SessionTabContent({ scope }: { scope: SessionListScope }) {
   const [page] = useState(0)
-  const sessionsQuery = useSessions(scope, page, 20)
+  const sessionsQuery = useSessions(scope, page, 30)
 
   if (sessionsQuery.isPending) {
     return (
-      <div className="flex flex-col gap-3">
-        <Skeleton className="h-28 w-full rounded-xl" />
-        <Skeleton className="h-28 w-full rounded-xl" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Skeleton className="h-44 w-full rounded-xl" />
+        <Skeleton className="h-44 w-full rounded-xl" />
+        <Skeleton className="h-44 w-full rounded-xl" />
       </div>
     )
   }
@@ -149,7 +159,7 @@ function SessionTabContent({ scope }: { scope: SessionListScope }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {items.map((session) => (
         <SessionCard key={session.id} session={session} />
       ))}

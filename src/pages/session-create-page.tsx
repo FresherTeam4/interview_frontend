@@ -92,7 +92,7 @@ export default function SessionCreatePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full">
       <PageHeader
         title="Tạo phiên phỏng vấn"
         description="Chọn hồ sơ và JD để hệ thống sinh câu hỏi phỏng vấn riêng cho bạn."

@@ -120,7 +120,7 @@ export default function InterviewAnswerInput({ session }: InterviewAnswerInputPr
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-xs">
+    <div className="relative flex items-end gap-2 rounded-2xl border bg-card p-1.5 shadow-xs focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 transition-all">
       <Textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
@@ -128,36 +128,33 @@ export default function InterviewAnswerInput({ session }: InterviewAnswerInputPr
         placeholder={
           isEvaluating
             ? 'AI đang suy nghĩ và chuẩn bị phản hồi...'
-            : 'Nhập câu trả lời của bạn ở đây (nhấn Ctrl + Enter để gửi)...'
+            : 'Nhập câu trả lời của bạn... (nhấn Ctrl + Enter để gửi)'
         }
         disabled={!isWaitingAnswer || submitAnswer.isPending || isEvaluating}
-        rows={4}
-        className="resize-none border-0 shadow-none focus-visible:ring-0 text-sm leading-relaxed p-1"
+        rows={1}
+        className="flex-1 resize-none border-0 bg-transparent py-1 px-2.5 shadow-none focus-visible:ring-0 text-sm leading-relaxed min-h-[36px] max-h-[140px]"
       />
 
-      <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
-        <span className="hidden sm:inline">Nhấn Ctrl + Enter để gửi nhanh câu trả lời</span>
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-xs">{content.length} ký tự</span>
-          <Button
-            size="sm"
-            onClick={() => void handleSubmit()}
-            disabled={!content.trim() || !isWaitingAnswer || submitAnswer.isPending || !promptTurnId}
-            className="gap-1.5"
-          >
-            {submitAnswer.isPending ? (
-              <>
-                <Loader2 className="size-3.5 animate-spin" />
-                Đang gửi...
-              </>
-            ) : (
-              <>
-                <span>Gửi trả lời</span>
-                <ArrowUp className="size-3.5" />
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="flex items-center gap-1.5 shrink-0 pb-0.5 pr-0.5">
+        {content.length > 0 ? (
+          <span className="text-[11px] text-muted-foreground mr-1 select-none">
+            {content.length} ký tự
+          </span>
+        ) : null}
+
+        <Button
+          size="icon"
+          onClick={() => void handleSubmit()}
+          disabled={!content.trim() || !isWaitingAnswer || submitAnswer.isPending || !promptTurnId}
+          className="size-8 rounded-xl shrink-0 shadow-xs"
+          title="Gửi câu trả lời (Ctrl + Enter)"
+        >
+          {submitAnswer.isPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <ArrowUp className="size-4" />
+          )}
+        </Button>
       </div>
     </div>
   )

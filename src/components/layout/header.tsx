@@ -29,7 +29,7 @@ export default function Header() {
   }
 
   return (
-    <header className="border-b border-border">
+    <header className="shrink-0 border-b border-border bg-background/95 backdrop-blur-xs z-30">
       <nav className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
         <Link to={ROUTES.home} className="font-semibold">
           MockInterview

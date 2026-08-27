@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { Loader2, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -51,7 +51,6 @@ export default function SessionSetupForm({ confirmedProfiles, readyJds }: Sessio
           languageCode: 'vi',
         },
       })
-      // Lưu lại ID phiên gần đây vào localStorage
       try {
         const key = 'recent_interview_sessions'
         const existing: number[] = JSON.parse(localStorage.getItem(key) ?? '[]')
@@ -69,28 +68,30 @@ export default function SessionSetupForm({ confirmedProfiles, readyJds }: Sessio
   }
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between gap-2">
-        <div className="space-y-1">
-          <CardTitle>Thiết lập phiên phỏng vấn</CardTitle>
-          <CardDescription>
-            Chọn hồ sơ và mô tả công việc để hệ thống sinh câu hỏi phỏng vấn riêng cho bạn.
-          </CardDescription>
-        </div>
-        <RubricPreviewDialog />
+    <Card className="max-w-2xl mx-auto w-full shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-lg">Thiết lập phiên phỏng vấn</CardTitle>
+        <CardDescription>
+          Chọn hồ sơ và mô tả công việc để hệ thống sinh câu hỏi phỏng vấn riêng cho bạn.
+        </CardDescription>
+        <CardAction>
+          <RubricPreviewDialog />
+        </CardAction>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-5 pt-2">
         {/* Profile */}
         <div className="space-y-1.5">
-          <Label htmlFor="session-profile">Hồ sơ ứng viên</Label>
+          <Label htmlFor="session-profile" className="font-medium text-sm">
+            Hồ sơ ứng viên <span className="text-destructive">*</span>
+          </Label>
           {confirmedProfiles.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Chưa có hồ sơ nào được xác nhận. Hãy xác nhận hồ sơ trước.
             </p>
           ) : (
             <Select value={profileId} onValueChange={setProfileId}>
-              <SelectTrigger id="session-profile">
-                <SelectValue placeholder="Chọn hồ sơ..." />
+              <SelectTrigger id="session-profile" className="w-full">
+                <SelectValue placeholder="Chọn hồ sơ ứng viên..." />
               </SelectTrigger>
               <SelectContent>
                 {confirmedProfiles.map((p) => (
@@ -105,15 +106,17 @@ export default function SessionSetupForm({ confirmedProfiles, readyJds }: Sessio
 
         {/* JD */}
         <div className="space-y-1.5">
-          <Label htmlFor="session-jd">Mô tả công việc (JD)</Label>
+          <Label htmlFor="session-jd" className="font-medium text-sm">
+            Mô tả công việc (JD) <span className="text-destructive">*</span>
+          </Label>
           {readyJds.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Chưa có JD nào được xác nhận. Hãy tạo và xác nhận JD trước.
             </p>
           ) : (
             <Select value={jdId} onValueChange={setJdId}>
-              <SelectTrigger id="session-jd">
-                <SelectValue placeholder="Chọn JD..." />
+              <SelectTrigger id="session-jd" className="w-full">
+                <SelectValue placeholder="Chọn mô tả công việc (JD)..." />
               </SelectTrigger>
               <SelectContent>
                 {readyJds.map((j) => (
@@ -126,61 +129,66 @@ export default function SessionSetupForm({ confirmedProfiles, readyJds }: Sessio
           )}
         </div>
 
-        {/* Difficulty */}
-        <div className="space-y-1.5">
-          <Label htmlFor="session-difficulty">Độ khó</Label>
-          <Select value={difficulty} onValueChange={(v) => setDifficulty(v as InterviewDifficulty)}>
-            <SelectTrigger id="session-difficulty">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.entries(INTERVIEW_DIFFICULTY_LABEL) as [InterviewDifficulty, string][]).map(
-                ([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ),
-              )}
-            </SelectContent>
-          </Select>
+        {/* 2-column Grid for Difficulty & Mode */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Difficulty */}
+          <div className="space-y-1.5">
+            <Label htmlFor="session-difficulty" className="font-medium text-sm">Độ khó</Label>
+            <Select value={difficulty} onValueChange={(v) => setDifficulty(v as InterviewDifficulty)}>
+              <SelectTrigger id="session-difficulty" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.entries(INTERVIEW_DIFFICULTY_LABEL) as [InterviewDifficulty, string][]).map(
+                  ([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ),
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Mode */}
+          <div className="space-y-1.5">
+            <Label htmlFor="session-mode" className="font-medium text-sm">Hình thức</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as SessionMode)}>
+              <SelectTrigger id="session-mode" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.entries(SESSION_MODE_LABEL) as [SessionMode, string][]).map(
+                  ([value, label]) => (
+                    <SelectItem key={value} value={value} disabled={value === 'VOICE_TURN_BASED'}>
+                      {label}{value === 'VOICE_TURN_BASED' ? ' (sắp có)' : ''}
+                    </SelectItem>
+                  ),
+                )}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Mode */}
-        <div className="space-y-1.5">
-          <Label htmlFor="session-mode">Hình thức</Label>
-          <Select value={mode} onValueChange={(v) => setMode(v as SessionMode)}>
-            <SelectTrigger id="session-mode">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.entries(SESSION_MODE_LABEL) as [SessionMode, string][]).map(
-                ([value, label]) => (
-                  <SelectItem key={value} value={value} disabled={value === 'VOICE_TURN_BASED'}>
-                    {label}{value === 'VOICE_TURN_BASED' ? ' (sắp có)' : ''}
-                  </SelectItem>
-                ),
-              )}
-            </SelectContent>
-          </Select>
+        <div className="pt-2 border-t mt-1 flex items-center justify-end">
+          <Button
+            className="gap-2 px-5"
+            onClick={() => void handleSubmit()}
+            disabled={!canSubmit}
+          >
+            {createSession.isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Đang tạo phiên...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4" />
+                <span>Tạo phiên phỏng vấn</span>
+              </>
+            )}
+          </Button>
         </div>
-
-        <Button
-          className="w-fit"
-          onClick={() => void handleSubmit()}
-          disabled={!canSubmit}
-        >
-          {createSession.isPending ? (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Đang tạo...
-            </>
-          ) : (
-            <>
-              <Sparkles className="size-4" />
-              Tạo phiên phỏng vấn
-            </>
-          )}
-        </Button>
       </CardContent>
     </Card>
   )
