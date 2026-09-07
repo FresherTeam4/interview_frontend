@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { getErrorMessage } from '@/api/api-error'
 import { useRetrySession, useStartSession } from '@/hooks/use-interview-session'
 import {
@@ -11,7 +11,6 @@ import {
   SESSION_STATUS,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
-import RubricPreviewDialog from '@/features/session/components/rubric-preview-dialog'
 import type { InterviewSession } from '@/types/session'
 
 interface SessionStatusCardProps {
@@ -30,7 +29,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
   async function handleRetry() {
     try {
       await retrySession.mutateAsync({ expectedVersion: session.version })
-      toast.success('Đã gửi yêu cầu thử lại sinh câu hỏi.')
+      toast.success('Đã gửi yêu cầu thử lại chuẩn bị phiên phỏng vấn.')
     } catch (error) {
       toast.error(getErrorMessage(error))
     }
@@ -60,16 +59,13 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
         </CardTitle>
         <CardDescription>
           {isGenerating
-            ? 'Hệ thống đang sinh bộ câu hỏi phỏng vấn. Trạng thái tự cập nhật, bạn không cần làm mới trang.'
+            ? 'Hệ thống đang chuẩn bị kế hoạch phỏng vấn và đối thoại thích ứng theo CV & JD. Bạn không cần làm mới trang.'
             : isReady
-              ? 'Bộ câu hỏi đã sẵn sàng! Bạn có thể bắt đầu buổi phỏng vấn.'
+              ? 'Phòng phỏng vấn đã sẵn sàng! Bạn có thể bắt đầu đối thoại tự do theo thời lượng ngay.'
               : isFailed
-                ? 'Sinh câu hỏi thất bại. Bạn có thể thử lại.'
+                ? 'Thiết lập kế hoạch phỏng vấn gặp sự cố. Bạn có thể thử lại.'
                 : SESSION_STATUS_LABEL[session.status]}
         </CardDescription>
-        <CardAction>
-          <RubricPreviewDialog />
-        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
@@ -100,15 +96,15 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
             <p className="font-medium">{SESSION_MODE_LABEL[session.mode]}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Tiến độ câu hỏi</p>
+            <p className="text-muted-foreground">Trạng thái đối thoại</p>
             <p className="font-medium">
               {isGenerating
-                ? 'Đang sinh câu hỏi...'
+                ? 'AI đang chuẩn bị ngữ cảnh...'
                 : isReady
-                  ? `${session.totalQuestionCount} câu hỏi (chưa trả lời)`
-                  : isFailed && session.totalQuestionCount === 0
-                    ? 'Chưa sinh được câu hỏi'
-                    : `${session.answeredQuestionCount}/${session.totalQuestionCount} câu đã trả lời`}
+                  ? 'Sẵn sàng phỏng vấn tự do'
+                  : isFailed
+                    ? 'Quá trình chuẩn bị gặp sự cố'
+                    : 'Đang tương tác thích ứng theo CV & JD'}
             </p>
           </div>
         </div>
@@ -125,7 +121,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
             disabled={retrySession.isPending}
           >
             <RefreshCw className="size-4" />
-            {retrySession.isPending ? 'Đang thử lại...' : 'Thử lại sinh câu hỏi'}
+            {retrySession.isPending ? 'Đang thử lại...' : 'Thử chuẩn bị lại'}
           </Button>
         ) : null}
 

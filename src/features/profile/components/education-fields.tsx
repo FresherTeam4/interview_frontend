@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { GraduationCap, Trash2 } from 'lucide-react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import FieldArraySection from '@/features/profile/components/field-array-section'
@@ -17,6 +17,7 @@ export default function EducationFields() {
   return (
     <FieldArraySection
       title="Học vấn"
+      icon={GraduationCap}
       description="Trường, bằng cấp và thời gian học."
       addLabel="Thêm học vấn"
       emptyLabel="Chưa có mục học vấn nào."
@@ -28,9 +29,12 @@ export default function EducationFields() {
         const rowErrors = errors.educations?.[index]
 
         return (
-          <div key={field.id} className="rounded-lg border border-border p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+          <div key={field.id} className="rounded-lg border border-border p-4 bg-card/60">
+            <div className="mb-3 flex items-center justify-between border-b border-border/40 pb-2">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                  {index + 1}
+                </span>
                 Học vấn {index + 1}
               </span>
               <Button

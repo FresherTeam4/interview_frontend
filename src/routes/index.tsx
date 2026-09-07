@@ -4,11 +4,8 @@ import GuestGuard from '@/routes/guest-guard'
 import RequireAuth from '@/routes/require-auth'
 import RootLayout from '@/routes/root-layout'
 import RouteErrorBoundary from '@/routes/route-error-boundary'
-import CvPage from '@/pages/cv-page'
+import { Navigate } from 'react-router'
 import DashboardPage from '@/pages/dashboard-page'
-import JdCreatePage from '@/pages/jd-create-page'
-import JdDetailPage from '@/pages/jd-detail-page'
-import JdPage from '@/pages/jd-page'
 import LoginPage from '@/pages/login-page'
 import NotFoundPage from '@/pages/not-found-page'
 import ProfileDetailPage from '@/pages/profile-detail-page'
@@ -33,7 +30,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // App — mọi trang đều yêu cầu đăng nhập; thêm chức năng mới = thêm 1 child ở đây
+  // App — các luồng tính năng tập trung
   {
     element: <RequireAuth />,
     children: [
@@ -43,12 +40,19 @@ export const router = createBrowserRouter([
         errorElement: <RouteErrorBoundary />,
         children: [
           { index: true, element: <DashboardPage /> },
-          { path: ROUTES.cv, element: <CvPage /> },
+
+          // CV được gộp hoàn toàn vào Hồ sơ ứng viên
+          { path: 'cv', element: <Navigate to={ROUTES.profile} replace /> },
+          { path: 'profiles', element: <Navigate to={ROUTES.profile} replace /> },
           { path: ROUTES.profile, element: <ProfilePage /> },
           { path: ROUTES.profileDetail, element: <ProfileDetailPage /> },
-          { path: ROUTES.jd, element: <JdPage /> },
-          { path: ROUTES.jdCreate, element: <JdCreatePage /> },
-          { path: ROUTES.jdDetail, element: <JdDetailPage /> },
+
+          // JD được gộp hoàn toàn vào luồng Tạo phỏng vấn
+          { path: 'jd', element: <Navigate to={ROUTES.sessionCreate} replace /> },
+          { path: 'jd/create', element: <Navigate to={ROUTES.sessionCreate} replace /> },
+          { path: 'jd/:jobDescriptionId', element: <Navigate to={ROUTES.sessionCreate} replace /> },
+
+          // Quản lý và Phòng phỏng vấn
           { path: ROUTES.sessionList, element: <SessionListPage /> },
           { path: ROUTES.sessionCreate, element: <SessionCreatePage /> },
           { path: ROUTES.sessionDetail, element: <SessionDetailPage /> },

@@ -11,20 +11,31 @@ import type {
 const UPLOAD_TIMEOUT_MS = 60_000
 
 export async function createTextJd(data: CreateTextJdRequest): Promise<JobDescription> {
-  const res = await api.post<JobDescription>('/job-descriptions/text', data)
-  return res.data
+  const res = await api.post<JobDescription>('/job-descriptions', {
+    title: data.title,
+    text: data.text,
+  })
+  return {
+    ...res.data,
+    title: res.data.title || res.data.templateTitle || data.title,
+  }
 }
 
 export async function createFileJd(title: string, file: File): Promise<JobDescription> {
   const formData = new FormData()
-  formData.append('title', title)
   formData.append('file', file)
+  if (title) {
+    formData.append('title', title)
+  }
 
-  const res = await api.post<JobDescription>('/job-descriptions/file', formData, {
+  const res = await api.post<JobDescription>('/job-descriptions', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: UPLOAD_TIMEOUT_MS,
   })
-  return res.data
+  return {
+    ...res.data,
+    title: res.data.title || res.data.templateTitle || title,
+  }
 }
 
 export async function getJobDescriptions(
@@ -39,7 +50,10 @@ export async function getJobDescriptions(
 
 export async function getJobDescription(id: number): Promise<JobDescription> {
   const res = await api.get<JobDescription>(`/job-descriptions/${id}`)
-  return res.data
+  return {
+    ...res.data,
+    title: res.data.title || res.data.templateTitle || res.data.originalFilename || 'Mô tả công việc',
+  }
 }
 
 export async function updateJobDescription(

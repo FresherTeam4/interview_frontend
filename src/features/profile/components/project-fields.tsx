@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { FolderGit2, Trash2 } from 'lucide-react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -18,7 +18,8 @@ export default function ProjectFields() {
 
   return (
     <FieldArraySection
-      title="Dự án"
+      title="Dự án thực tế"
+      icon={FolderGit2}
       description="AI dựa vào phần này để hỏi đúng thứ bạn từng làm, nên hãy mô tả vai trò và công nghệ thật cụ thể."
       addLabel="Thêm dự án"
       emptyLabel="Chưa có dự án nào."
@@ -31,9 +32,14 @@ export default function ProjectFields() {
         const descriptionId = `projects.${index}.description`
 
         return (
-          <div key={field.id} className="rounded-lg border border-border p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">Dự án {index + 1}</span>
+          <div key={field.id} className="rounded-lg border border-border p-4 bg-card/60">
+            <div className="mb-3 flex items-center justify-between border-b border-border/40 pb-2">
+              <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+                  {index + 1}
+                </span>
+                Dự án {index + 1}
+              </span>
               <Button
                 type="button"
                 variant="destructive"

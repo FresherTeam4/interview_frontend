@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { profileDetailPath } from '@/constants/routes'
 import { formatDateTime } from '@/lib/format'
+import CvPreviewPanel from '@/features/profile/components/cv-preview-panel'
 import type { ProfileSummary } from '@/types/profile'
 
 interface ProfileSummaryCardProps {
@@ -60,7 +61,13 @@ export default function ProfileSummaryCard({ profile }: ProfileSummaryCardProps)
             Xem và sửa
           </Link>
         </Button>
-        <span className="text-xs text-muted-foreground">
+        {profile.cvDocumentId && (
+          <CvPreviewPanel
+            cvDocumentId={profile.cvDocumentId}
+            filename={profile.cvOriginalFilename ?? 'CV gốc'}
+          />
+        )}
+        <span className="text-xs text-muted-foreground ml-auto">
           Cập nhật {formatDateTime(profile.updatedAt)}
         </span>
       </CardFooter>

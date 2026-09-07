@@ -1,8 +1,11 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import { Award, MessageSquare } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import InterviewAnswerInput from '@/features/session/components/interview-answer-input'
 import InterviewChatView from '@/features/session/components/interview-chat-view'
-import InterviewRoomSidebar from '@/features/session/components/interview-room-sidebar'
+import InterviewReportView from '@/features/session/components/interview-report-view'
+import InterviewRoomHeader from '@/features/session/components/interview-room-header'
 import type { InterviewSession } from '@/types/session'
 
 interface InterviewRoomProps {
@@ -10,64 +13,101 @@ interface InterviewRoomProps {
 }
 
 export default function InterviewRoom({ session }: InterviewRoomProps) {
-  const isFinished = session.status === 'COMPLETED' || session.status === 'SCORING'
+  const isCompleted = session.status === 'COMPLETED'
+  const isScoring = session.status === 'SCORING'
+  const isFailed = session.status === 'SCORING_FAILED'
+  const isFinished = isCompleted || isScoring || isFailed
   const isEvaluating =
     session.status === 'IN_PROGRESS' && session.awaitingAction === 'ENGINE_RESPONSE'
 
-  const sidebarContainerRef = useRef<HTMLDivElement>(null)
-  const [matchedHeight, setMatchedHeight] = useState<number | undefined>(undefined)
-
-  useLayoutEffect(() => {
-    if (!sidebarContainerRef.current) return
-
-    function syncHeight() {
-      if (sidebarContainerRef.current) {
-        setMatchedHeight(sidebarContainerRef.current.offsetHeight)
-      }
-    }
-
-    syncHeight()
-    const resizeObserver = new ResizeObserver(syncHeight)
-    resizeObserver.observe(sidebarContainerRef.current)
-    return () => resizeObserver.disconnect()
-  }, [session, isFinished])
+  const [activeTab, setActiveTab] = useState<'report' | 'chat'>('report')
+  const turnCount = session.turns?.length || 0
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 w-full items-start">
-      {/* Left Sidebar: Measured via ref to determine exact pixel height */}
-      <div ref={sidebarContainerRef} className="w-full lg:w-72 xl:w-80 shrink-0">
-        <InterviewRoomSidebar session={session} />
-      </div>
+    <div className="flex flex-col gap-4 w-full">
+      {/* Compact Top Header Bar */}
+      <InterviewRoomHeader session={session} />
 
-      {/* Right Column: Chat History & Answer Input */}
-      <div className="flex-1 flex flex-col gap-4 min-w-0 w-full">
-        {/* Chat Conversation Card with exact matched height when finished */}
-        <Card
-          style={isFinished && matchedHeight ? { height: `${matchedHeight}px` } : undefined}
-          className={`flex flex-col overflow-hidden shadow-xs border ${
-            isFinished ? '' : 'min-h-[460px] max-h-[64vh]'
-          }`}
-        >
-          {isFinished ? (
-            <CardHeader className="pb-3 border-b shrink-0">
-              <CardTitle className="text-sm font-semibold">
-                Lịch sử đối thoại của buổi phỏng vấn
-              </CardTitle>
-            </CardHeader>
-          ) : null}
+      {/* Main Room Content: 100% Screen Width */}
+      {isFinished ? (
+        /* Finished State: Toggle between AI Report & Full Conversation */
+        <div className="flex flex-col gap-4 w-full">
+          {/* View Switcher Tabs */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3 print:hidden">
+            <div className="flex items-center gap-1.5 rounded-xl border bg-muted/30 p-1">
+              <Button
+                variant={activeTab === 'report' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveTab('report')}
+                className="gap-1.5 text-xs font-medium"
+              >
+                <Award className="size-3.5" />
+                <span>Báo cáo đánh giá</span>
+              </Button>
+              <Button
+                variant={activeTab === 'chat' ? 'ghost' : 'default'}
+                size="sm"
+                onClick={() => setActiveTab('chat')}
+                className="gap-1.5 text-xs font-medium"
+              >
+                <MessageSquare className="size-3.5" />
+                <span>Lịch sử đối thoại ({turnCount})</span>
+              </Button>
+            </div>
 
-          <CardContent className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 min-h-0">
-            <InterviewChatView
-              turns={session.turns}
-              isEvaluating={isEvaluating}
-              statusMessage={session.statusMessage}
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {activeTab === 'report'
+                ? 'Báo cáo chi tiết năng lực & lộ trình hành động từ AI'
+                : 'Toàn bộ các lượt đối thoại thực tế trong phiên phỏng vấn'}
+            </span>
+          </div>
+
+          {/* Active Tab Content */}
+          {activeTab === 'report' ? (
+            <InterviewReportView
+              session={session}
+              onViewConversation={() => setActiveTab('chat')}
             />
-          </CardContent>
-        </Card>
+          ) : (
+            <Card className="flex flex-col overflow-hidden shadow-xs border min-h-[500px] max-h-[75vh]">
+              <CardHeader className="py-3 px-4 sm:px-6 border-b shrink-0 bg-muted/20">
+                <CardTitle className="text-sm font-semibold flex items-center justify-between">
+                  <span>Lịch sử đối thoại của buổi phỏng vấn</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {turnCount} lượt trao đổi
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 min-h-0">
+                <InterviewChatView
+                  turns={session.turns}
+                  isEvaluating={false}
+                  statusMessage={session.statusMessage}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : (
+        /* Active Interview State: Full-width Chat Conversation + Answer Input */
+        <div className="flex flex-col gap-4 w-full">
+          <Card className="flex flex-col overflow-hidden shadow-xs border min-h-[480px] max-h-[66vh]">
+            <CardContent className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 min-h-0">
+              <InterviewChatView
+                turns={session.turns}
+                isEvaluating={isEvaluating}
+                statusMessage={
+                  session.status === 'FAILED' || session.awaitingAction === 'ENGINE_RETRY'
+                    ? session.statusMessage
+                    : null
+                }
+              />
+            </CardContent>
+          </Card>
 
-        {/* Answer Input (Only when active / in-progress) */}
-        {!isFinished ? <InterviewAnswerInput session={session} /> : null}
-      </div>
+          <InterviewAnswerInput session={session} />
+        </div>
+      )}
     </div>
   )
 }

@@ -18,10 +18,10 @@ if (!baseURL) {
   )
 }
 
-// instance dùng để gọi APIs
+// instance dùng để gọi APIs (cho phép thời gian chờ đủ dài khi gọi AI mô hình lớn)
 export const api: AxiosInstance = axios.create({
   baseURL,
-  timeout: 15_000,
+  timeout: 60_000,
   // kèm cookie
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
@@ -30,7 +30,7 @@ export const api: AxiosInstance = axios.create({
 // instance riêng để gọi refresh token
 const refreshClient = axios.create({
   baseURL,
-  timeout: 15_000,
+  timeout: 30_000,
   withCredentials: true
 })
 

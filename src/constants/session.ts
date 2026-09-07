@@ -7,6 +7,7 @@ export const SESSION_STATUS = {
   IN_PROGRESS: 'IN_PROGRESS',
   PAUSED: 'PAUSED',
   SCORING: 'SCORING',
+  SCORING_FAILED: 'SCORING_FAILED',
   COMPLETED: 'COMPLETED',
   ABANDONED: 'ABANDONED',
   FAILED: 'FAILED',
@@ -14,11 +15,12 @@ export const SESSION_STATUS = {
 
 export const SESSION_STATUS_LABEL: Record<SessionStatus, string> = {
   CREATED: 'Đã tạo',
-  SCRIPT_GENERATING: 'Đang sinh câu hỏi',
+  SCRIPT_GENERATING: 'Đang thiết lập kế hoạch',
   READY: 'Sẵn sàng',
   IN_PROGRESS: 'Đang phỏng vấn',
   PAUSED: 'Tạm dừng',
   SCORING: 'Đang chấm điểm',
+  SCORING_FAILED: 'Chấm điểm lỗi',
   COMPLETED: 'Hoàn thành',
   ABANDONED: 'Đã huỷ',
   FAILED: 'Thất bại',

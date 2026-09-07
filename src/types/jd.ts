@@ -1,5 +1,11 @@
 export type JobDescriptionSourceType = 'TEXT' | 'FILE'
-export type JobDescriptionStatus = 'DRAFT' | 'READY'
+export type JobDescriptionStatus =
+  | 'DRAFT'
+  | 'UPLOADED'
+  | 'EXTRACTING'
+  | 'ANALYZING'
+  | 'READY'
+  | 'FAILED'
 
 /** `GET /api/job-descriptions/{id}`, `PUT`, `POST .../confirm`. */
 export interface JobDescription {
@@ -8,11 +14,18 @@ export interface JobDescription {
   sourceType: JobDescriptionSourceType
   status: JobDescriptionStatus
   originalFilename: string | null
-  rawText: string | null
-  confirmedText: string | null
-  confirmedAt: string | null
-  createdAt: string
-  updatedAt: string
+  rawText?: string | null
+  confirmedText?: string | null
+  confirmedAt?: string | null
+  templateId?: number
+  templateTitle?: string
+  templateConfirmed?: boolean
+  statusMessage?: string
+  errorCode?: string
+  uploadedAt?: string
+  processedAt?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 /** Một dòng trong `GET /api/job-descriptions` (phân trang). */

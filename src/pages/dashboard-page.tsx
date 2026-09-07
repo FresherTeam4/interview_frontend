@@ -1,240 +1,271 @@
-import { Circle, CircleCheck, Sparkles } from 'lucide-react'
-import { Link } from 'react-router'
+import { Award, FileUp, MessageSquareText, UserRoundPen, ArrowRight, Play } from 'lucide-react'
+import { Link, useNavigate } from 'react-router'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import ErrorState from '@/components/error-state'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import PageHeader from '@/components/page-header'
-import CvStatusBadge from '@/features/cv/components/cv-status-badge'
-import { getErrorMessage } from '@/api/api-error'
+import CvUploadDialog from '@/features/profile/components/cv-upload-dialog'
 import { useAuth } from '@/hooks/use-auth'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
-import { isCvInProgress, useCvDocuments } from '@/hooks/use-cv-documents'
 import { useSessions } from '@/hooks/use-interview-session'
-import { useJobDescriptions } from '@/hooks/use-job-descriptions'
-import { JD_MAX_PAGE_SIZE } from '@/constants/jd'
-import { profileDetailPath, ROUTES, sessionDetailPath } from '@/constants/routes'
+import { PRESET_TEMPLATES } from '@/features/session/data/preset-templates'
+import { ROUTES, sessionDetailPath } from '@/constants/routes'
 import { SESSION_STATUS_LABEL } from '@/constants/session'
-import type { CvDocument } from '@/types/cv'
-
-interface ReadinessStep {
-  title: string
-  description: string
-  done: boolean
-  to: string
-  actionLabel: string
-}
-
-function findLatestCv(documents: CvDocument[]): CvDocument | null {
-  return documents.reduce<CvDocument | null>(
-    (latest, cv) => (latest === null || cv.uploadedAt > latest.uploadedAt ? cv : latest),
-    null,
-  )
-}
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const cvQuery = useCvDocuments()
+  const navigate = useNavigate()
   const profilesQuery = useCandidateProfiles()
-  const jdQuery = useJobDescriptions(0, JD_MAX_PAGE_SIZE)
   const activeSessionsQuery = useSessions('ACTIVE', 0, 5)
+  const historySessionsQuery = useSessions('HISTORY', 0, 10)
 
-  const documents = cvQuery.data ?? []
   const profiles = profilesQuery.data ?? []
-  const jdItems = jdQuery.data?.items ?? []
   const activeSessions = activeSessionsQuery.data?.items ?? []
-  const totalActiveCount = activeSessionsQuery.data?.totalElements ?? activeSessions.length
-  const latestCv = findLatestCv(documents)
-  const parsingCount = documents.filter(isCvInProgress).length
-  const confirmedProfile = profiles.find((profile) => profile.confirmedAt !== null) ?? null
-  const readyJd = jdItems.find((jd) => jd.status === 'READY') ?? null
-  const isPending = cvQuery.isPending || profilesQuery.isPending || jdQuery.isPending
-  const error = cvQuery.error ?? profilesQuery.error ?? jdQuery.error
+  const historySessions = historySessionsQuery.data?.items ?? []
 
-  const steps: ReadinessStep[] = [
-    {
-      title: 'Tải CV lên',
-      description: latestCv
-        ? `CV mới nhất: ${latestCv.originalFilename}`
-        : 'Cần một CV dạng PDF để hệ thống có nguyên liệu sinh câu hỏi.',
-      done: latestCv !== null,
-      to: ROUTES.cv,
-      actionLabel: 'Tải CV',
-    },
-    {
-      title: 'Chờ AI bóc tách thành hồ sơ',
-      description:
-        parsingCount > 0
-          ? `Đang bóc tách ${parsingCount} CV — trạng thái tự cập nhật ở trang CV.`
-          : 'Bóc tách chạy nền ngay sau khi tải lên: học vấn, kỹ năng, dự án.',
-      done: profiles.length > 0,
-      to: ROUTES.cv,
-      actionLabel: 'Xem tiến trình',
-    },
-    {
-      title: 'Xác nhận thông tin đã đúng',
-      description: 'Sửa chỗ AI bóc tách sai, rồi xác nhận để mở khoá buổi phỏng vấn.',
-      done: confirmedProfile !== null,
-      to: profiles[0] ? profileDetailPath(profiles[0].id) : ROUTES.profile,
-      actionLabel: 'Kiểm tra hồ sơ',
-    },
-    {
-      title: 'Tạo mô tả công việc (JD)',
-      description: readyJd
-        ? `JD đã sẵn sàng: ${readyJd.title}`
-        : 'Nhập hoặc tải JD để hệ thống sinh câu hỏi phù hợp với vị trí ứng tuyển.',
-      done: readyJd !== null,
-      to: ROUTES.jdCreate,
-      actionLabel: 'Tạo JD',
-    },
-  ]
-
-  const isReady = steps.every((step) => step.done)
-
-  function renderSteps() {
-    if (isPending) {
-      return <Skeleton className="h-32 w-full rounded-lg" />
-    }
-
-    if (error) {
-      return (
-        <ErrorState
-          message={getErrorMessage(error)}
-          onRetry={() => {
-            void cvQuery.refetch()
-            void profilesQuery.refetch()
-            void jdQuery.refetch()
-          }}
-        />
-      )
-    }
-
-    return (
-      <ol className="flex flex-col gap-4">
-        {steps.map((step, index) => (
-          <li key={step.title} className="flex items-start gap-3">
-            {step.done ? (
-              <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" />
-            ) : (
-              <Circle className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-            )}
-            <div className="min-w-40 flex-1 space-y-0.5">
-              <p className="text-sm font-medium">
-                Bước {index + 1}: {step.title}
-              </p>
-              <p className="text-xs text-muted-foreground">{step.description}</p>
-            </div>
-            {step.done ? null : (
-              <Button variant="outline" size="sm" asChild>
-                <Link to={step.to}>{step.actionLabel}</Link>
-              </Button>
-            )}
-          </li>
-        ))}
-      </ol>
-    )
-  }
+  // Metrics
+  const confirmedProfilesCount = profiles.filter((p) => p.confirmedAt !== null).length
+  const totalSessionsCount = activeSessions.length + historySessions.length
+  const scoredSessions = historySessions.filter((s) => s.overallScore !== null)
+  const avgScore =
+    scoredSessions.length > 0
+      ? Math.round(
+          scoredSessions.reduce((acc, curr) => acc + (curr.overallScore || 0), 0) /
+            scoredSessions.length,
+        )
+      : null
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8 pb-12">
       <PageHeader
-        title={`Xin chào, ${user?.fullName ?? 'bạn'}`}
-        description="Phỏng vấn thử với câu hỏi sinh riêng từ CV của bạn."
+        title={`Xin chào, ${user?.fullName ?? 'bạn'}!`}
+        description="Chào mừng bạn đến với Nền tảng Luyện Phỏng vấn AI thực chiến. Hãy chọn một mẫu phỏng vấn hoặc tạo phiên mới để bắt đầu."
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Chuẩn bị hồ sơ</CardTitle>
-          <CardDescription>Xong bốn bước này là có thể bắt đầu phỏng vấn.</CardDescription>
-          {latestCv ? (
-            <CardAction>
-              <CvStatusBadge status={latestCv.status} />
-            </CardAction>
-          ) : null}
-        </CardHeader>
-        <CardContent>{renderSteps()}</CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Buổi phỏng vấn thử</CardTitle>
-          <CardDescription>
-            {isReady
-              ? 'Mọi thứ đã sẵn sàng! Bấm nút bên dưới để tạo phiên phỏng vấn.'
-              : 'Hoàn thành bốn bước chuẩn bị ở trên để mở khoá buổi phỏng vấn.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {isReady ? (
-            <Button className="w-fit" asChild>
+      {/* Hero Stats & Quick Actions Grid */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="glass-card">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Hồ sơ ứng viên</p>
+              <p className="text-2xl font-bold tracking-tight">{profiles.length}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {confirmedProfilesCount} hồ sơ đã xác nhận
+              </p>
+            </div>
+            <div className="size-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <UserRoundPen className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Phiên phỏng vấn</p>
+              <p className="text-2xl font-bold tracking-tight">{totalSessionsCount}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {activeSessions.length} đang diễn ra · {historySessions.length} đã hoàn thành
+              </p>
+            </div>
+            <div className="size-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <MessageSquareText className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card">
+          <CardContent className="p-5 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground font-medium">Điểm đánh giá TB</p>
+              <p className="text-2xl font-bold tracking-tight">
+                {avgScore !== null ? `${avgScore}/100` : 'Chưa có'}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                {scoredSessions.length > 0
+                  ? `Dựa trên ${scoredSessions.length} phiên đã chấm`
+                  : 'Hoàn thành phiên để nhận điểm'}
+              </p>
+            </div>
+            <div className="size-11 rounded-xl bg-success/10 text-success flex items-center justify-center">
+              <Award className="size-5" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Action Banner */}
+      <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-primary/10 via-card to-background shadow-sm">
+        <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-semibold">
+              <span>Sẵn sàng luyện tập ngay</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+              Bắt đầu buổi phỏng vấn mô phỏng với AI
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Lựa chọn vị trí mong muốn từ kho mẫu phỏng vấn chuẩn hóa hoặc tải lên JD tuyển dụng thực tế. AI sẽ tự động phân tích CV và JD để đối thoại phỏng vấn tự do theo thời lượng phù hợp nhất cho bạn.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
+            <CvUploadDialog
+              onSuccess={() => void profilesQuery.refetch()}
+              trigger={
+                <Button variant="outline" className="gap-2">
+                  <FileUp className="size-4" />
+                  Tải CV mới
+                </Button>
+              }
+            />
+            <Button size="lg" asChild className="gap-2 shadow-md shadow-primary/20">
               <Link to={ROUTES.sessionCreate}>
-                <Sparkles className="size-4" />
-                Bắt đầu phỏng vấn
+                <Play className="size-4 fill-current" />
+                Luyện phỏng vấn ngay
               </Link>
             </Button>
-          ) : (
-            <Button className="w-fit" disabled>
-              <Sparkles className="size-4" />
-              Bắt đầu phỏng vấn
-            </Button>
-          )}
-
-          {/* Active Sessions */}
-          {activeSessions.length > 0 ? (
-            <div className="pt-3 border-t mt-2 flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Phiên phỏng vấn gần đây ({totalActiveCount})
-                </p>
-                <Button variant="ghost" size="sm" asChild className="text-xs h-7">
-                  <Link to={ROUTES.sessionList}>Xem tất cả</Link>
-                </Button>
-              </div>
-              <div className="flex flex-col gap-2">
-                {activeSessions.slice(0, 3).map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 text-sm transition-colors hover:bg-muted/30"
-                  >
-                    <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{session.jobDescriptionTitle}</span>
-                        <span className="text-xs text-muted-foreground">#{session.id}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {SESSION_STATUS_LABEL[session.status]} •{' '}
-                        {session.status === 'READY'
-                          ? `${session.totalQuestionCount} câu hỏi sẵn sàng`
-                          : `${session.answeredQuestionCount}/${session.totalQuestionCount} câu đã trả lời`}
-                      </p>
-                    </div>
-                    <Button size="sm" asChild className="gap-1 text-xs shrink-0">
-                      <Link to={sessionDetailPath(session.id)}>
-                        {session.status === 'READY' ? 'Bắt đầu' : 'Tiếp tục'} →
-                      </Link>
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              {totalActiveCount > 3 ? (
-                <Button variant="outline" size="sm" asChild className="w-full text-xs mt-1">
-                  <Link to={ROUTES.sessionList}>
-                    Xem thêm {totalActiveCount - 3} phiên đang diễn ra khác →
-                  </Link>
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Recommended Preset Templates */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Vị trí phỏng vấn gợi ý</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Các mẫu phỏng vấn tiêu chuẩn được thiết kế sẵn sàng để bạn bắt đầu luyện tập tức thì.
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" asChild className="text-xs gap-1">
+            <Link to={ROUTES.sessionCreate}>
+              Xem tất cả
+              <ArrowRight className="size-3" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {PRESET_TEMPLATES.slice(0, 3).map((tmpl) => (
+            <Card
+              key={tmpl.id}
+              className="flex flex-col justify-between transition-all hover:border-primary/50 hover:shadow-xs"
+            >
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Badge variant="secondary" className="text-[10px]">
+                    {tmpl.targetSeniority}
+                  </Badge>
+                  <span className="text-[11px] text-muted-foreground">
+                    {tmpl.content?.keySkills.length} tiêu chí
+                  </span>
+                </div>
+                <CardTitle className="text-sm font-semibold pt-1 line-clamp-1">
+                  {tmpl.title}
+                </CardTitle>
+                <CardDescription className="text-xs line-clamp-2">
+                  {tmpl.content?.summary}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs gap-1.5 mt-2"
+                  onClick={() => navigate(ROUTES.sessionCreate)}
+                >
+                  <Play className="size-3 fill-current" />
+                  Luyện vị trí này
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Sessions */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">Phiên phỏng vấn gần đây</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Theo dõi tiến độ luyện tập và xem lại báo cáo phân tích năng lực của bạn.
+            </p>
+          </div>
+          <Button variant="ghost" size="sm" asChild className="text-xs gap-1">
+            <Link to={ROUTES.sessionList}>
+              Tất cả phiên
+              <ArrowRight className="size-3" />
+            </Link>
+          </Button>
+        </div>
+
+        {activeSessions.length === 0 && historySessions.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="py-8 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">Bạn chưa có phiên phỏng vấn nào.</p>
+              <Button size="sm" asChild>
+                <Link to={ROUTES.sessionCreate}>Bắt đầu phiên đầu tiên ngay</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3">
+            {[...activeSessions, ...historySessions].slice(0, 4).map((session) => {
+              const isCompleted = session.status === 'COMPLETED'
+              return (
+                <div
+                  key={session.id}
+                  className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border border-border/80 bg-card/60 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-foreground truncate">
+                        {session.jobDescriptionTitle}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] shrink-0">
+                        {SESSION_STATUS_LABEL[session.status]}
+                      </Badge>
+                      {isCompleted && session.overallScore !== null && (
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] font-semibold text-success bg-success/10 shrink-0"
+                        >
+                          {session.overallScore}/100 điểm
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {session.profileHeadline || 'Hồ sơ ứng viên'} · Thời lượng{' '}
+                      {session.durationMinutes ? `${session.durationMinutes} phút` : '30 phút'} · Đối thoại trực tiếp ·
+                      Cập nhật{' '}
+                      {new Date(session.lastActivityAt || session.createdAt).toLocaleDateString(
+                        'vi-VN',
+                      )}
+                    </p>
+                  </div>
+                  <Button size="sm" asChild className="shrink-0 gap-1.5 text-xs">
+                    <Link to={sessionDetailPath(session.id)}>
+                      {isCompleted ? (
+                        <>
+                          <Award className="size-3.5" />
+                          Xem báo cáo
+                        </>
+                      ) : (
+                        <>
+                          <Play className="size-3.5 fill-current" />
+                          Tiếp tục
+                        </>
+                      )}
+                    </Link>
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
-

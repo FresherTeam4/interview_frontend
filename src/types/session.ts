@@ -5,6 +5,7 @@ export type SessionStatus =
   | 'IN_PROGRESS'
   | 'PAUSED'
   | 'SCORING'
+  | 'SCORING_FAILED'
   | 'COMPLETED'
   | 'ABANDONED'
   | 'FAILED'
@@ -55,11 +56,15 @@ export interface InterviewSession {
   difficulty: InterviewDifficulty
   mode: SessionMode
   languageCode: string
+  durationMinutes?: number
+  deadlineAt?: string | null
+  remainingSeconds?: number
+  currentTurnIndex?: number
   status: SessionStatus
   awaitingAction: AwaitingAction
   version: number
-  answeredQuestionCount: number
-  totalQuestionCount: number
+  answeredQuestionCount?: number
+  totalQuestionCount?: number
   currentPrompt: CurrentPrompt | null
   turns: Turn[]
   voiceDraft: unknown | null
@@ -87,10 +92,11 @@ export interface InterviewSessionSummary {
   jobDescriptionTitle: string
   difficulty: InterviewDifficulty
   mode: SessionMode
+  durationMinutes?: number
   status: SessionStatus
   awaitingAction: AwaitingAction
-  answeredQuestionCount: number
-  totalQuestionCount: number
+  answeredQuestionCount?: number
+  totalQuestionCount?: number
   overallScore: number | null
   lastActivityAt: string | null
   createdAt: string
@@ -114,6 +120,7 @@ export interface SessionVersionRequest {
 
 export interface SubmitTextAnswerRequest {
   promptTurnId: number
+  expectedTurnIndex?: number
   content: string
   clientTurnId: string
   expectedVersion: number
@@ -125,6 +132,8 @@ export interface TextAnswerAccepted {
   status: SessionStatus
   awaitingAction: AwaitingAction
   version: number
+  candidateTurn?: Turn
+  interviewerTurn?: Turn
 }
 
 export interface RubricCriterionLevel {

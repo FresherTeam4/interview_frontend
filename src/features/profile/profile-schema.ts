@@ -173,9 +173,15 @@ export function toFormValues(profile: CandidateProfile): ProfileFormValues {
   }
 }
 
-export function toUpdateRequest(values: ProfileFormValues): UpdateProfileRequest {
+export function toUpdateRequest(
+  values: ProfileFormValues,
+  currentProfile?: CandidateProfile,
+): UpdateProfileRequest {
   return {
+    version: currentProfile?.version ?? 0,
+    name: currentProfile?.name || values.headline || 'Ứng viên',
     headline: emptyToNull(values.headline),
+    summary: currentProfile?.summary ?? null,
     yearsExperience: toNumberOrNull(values.yearsExperience),
     targetPosition: emptyToNull(values.targetPosition),
     seniorityLevel: emptyToNull(values.seniorityLevel),

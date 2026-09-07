@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Trash2, Wrench } from 'lucide-react'
 import { useFieldArray, useFormContext } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { FieldError } from '@/components/ui/field'
@@ -22,6 +22,7 @@ export default function SkillFields() {
   return (
     <FieldArraySection
       title="Kỹ năng"
+      icon={Wrench}
       description="Ngôn ngữ, framework, database, công cụ… mà bạn thực sự dùng được."
       addLabel="Thêm kỹ năng"
       emptyLabel="Chưa có kỹ năng nào."

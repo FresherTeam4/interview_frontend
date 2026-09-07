@@ -1,5 +1,4 @@
 import { FileUp, UserRoundPen } from 'lucide-react'
-import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -13,9 +12,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import ErrorState from '@/components/error-state'
 import PageHeader from '@/components/page-header'
 import ProfileSummaryCard from '@/features/profile/components/profile-summary-card'
+import CvUploadDialog from '@/features/profile/components/cv-upload-dialog'
 import { getErrorMessage } from '@/api/api-error'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
-import { ROUTES } from '@/constants/routes'
 
 export default function ProfilePage() {
   const profilesQuery = useCandidateProfiles()
@@ -39,7 +38,7 @@ export default function ProfilePage() {
       )
     }
 
-    // Hồ sơ chỉ sinh ra từ một lần bóc tách CV — không nhập tay từ đầu được.
+    // Hồ sơ sinh ra từ một lần bóc tách CV hoặc khởi tạo
     if (profilesQuery.data.length === 0) {
       return (
         <Empty className="border">
@@ -47,18 +46,21 @@ export default function ProfilePage() {
             <EmptyMedia variant="icon">
               <UserRoundPen />
             </EmptyMedia>
-            <EmptyTitle>Chưa có hồ sơ</EmptyTitle>
+            <EmptyTitle>Chưa có hồ sơ ứng viên</EmptyTitle>
             <EmptyDescription>
-              Mỗi CV bóc tách xong sẽ tạo ra một hồ sơ ở đây. Hãy tải CV lên trước.
+              Tải CV định dạng PDF lên để AI tự động bóc tách kỹ năng, học vấn và tạo hồ sơ phỏng vấn cho bạn.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button asChild>
-              <Link to={ROUTES.cv}>
-                <FileUp className="size-4" />
-                Tải CV lên
-              </Link>
-            </Button>
+            <CvUploadDialog
+              onSuccess={() => void profilesQuery.refetch()}
+              trigger={
+                <Button className="gap-2">
+                  <FileUp className="size-4" />
+                  Tải CV lên ngay
+                </Button>
+              }
+            />
           </EmptyContent>
         </Empty>
       )
@@ -77,14 +79,17 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Hồ sơ ứng viên"
-        description="Mỗi CV cho ra một hồ sơ. Chọn hồ sơ để soát lại thông tin AI bóc tách."
+        description="Mỗi CV tạo ra một hồ sơ. Chọn hồ sơ để soát lại thông tin AI bóc tách và sẵn sàng cho buổi phỏng vấn."
         actions={
-          <Button variant="outline" asChild>
-            <Link to={ROUTES.cv}>
-              <FileUp className="size-4" />
-              Tải CV mới
-            </Link>
-          </Button>
+          <CvUploadDialog
+            onSuccess={() => void profilesQuery.refetch()}
+            trigger={
+              <Button className="gap-2">
+                <FileUp className="size-4" />
+                Tải CV mới
+              </Button>
+            }
+          />
         }
       />
       {renderContent()}

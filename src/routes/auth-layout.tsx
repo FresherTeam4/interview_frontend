@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import { BotMessageSquare } from 'lucide-react'
 import ModeToggle from '@/components/mode-toggle'
 
 export default function AuthLayout() {
@@ -15,36 +16,55 @@ export default function AuthLayout() {
 
         {/* logo được vẽ bằng thẻ svg  */}
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-lg font-semibold">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-8 w-8"
-            >
-              {/* Ngôi sao cách điệu */}
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              {/* Dấu checkmark lồng bên trong thể hiện sự thành công */}
-              <path d="M9 12l2 2 4-4" />
-            </svg>
-            MockInterview
+          <div className="flex items-center gap-3 text-xl font-bold tracking-tight">
+            <div className="size-10 rounded-xl bg-primary-foreground/15 backdrop-blur-md flex items-center justify-center text-primary-foreground border border-primary-foreground/20 shadow-inner">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-5"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+            </div>
+            <span>Mock<span className="font-extrabold text-primary-foreground/90">AI</span> Platform</span>
           </div>
         </div>
 
-        {/* tagline */}
-        <div className="relative z-10 space-y-4">
-          <blockquote className="space-y-2">
-            <p className="text-xl font-medium leading-relaxed">
-              &ldquo;Luyện phỏng vấn thực chiến, tự tin chinh phục mọi cơ hội nghề nghiệp.&rdquo;
+        {/* tagline & highlights */}
+        <div className="relative z-10 space-y-6">
+          <blockquote className="space-y-3">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-primary-foreground/20">
+              <BotMessageSquare className="size-3.5" />
+              <span>Nền tảng phỏng vấn AI chuyên nghiệp</span>
+            </div>
+            <p className="text-2xl font-bold leading-snug tracking-tight">
+              Luyện phỏng vấn thực chiến, tự tin chinh phục mọi cơ hội nghề nghiệp.
             </p>
-            <footer className="text-sm text-primary-foreground/70">
-              Nền tảng phỏng vấn thử thông minh
-            </footer>
+            <p className="text-sm text-primary-foreground/80 leading-relaxed">
+              Trải nghiệm phỏng vấn mô phỏng với AI theo sát hồ sơ và yêu cầu tuyển dụng thực tế. Nhận đánh giá chi tiết theo từng tiêu chí chuyên môn.
+            </p>
           </blockquote>
+
+          <div className="grid gap-3 pt-2 text-sm text-primary-foreground/90">
+            <div className="flex items-center gap-2.5">
+              <div className="size-2 rounded-full bg-primary-foreground/70" />
+              <span>Phân tích CV tự động trích xuất kỹ năng trọng tâm</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="size-2 rounded-full bg-primary-foreground/70" />
+              <span>Phỏng vấn đối thoại thích ứng cá nhân hóa theo từng vị trí tuyển dụng</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="size-2 rounded-full bg-primary-foreground/70" />
+              <span>Nhận xét đa chiều & gợi ý câu trả lời tối ưu</span>
+            </div>
+          </div>
         </div>
       </div>
 

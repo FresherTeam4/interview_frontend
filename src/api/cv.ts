@@ -10,6 +10,11 @@ export async function getCvDocuments(): Promise<CvDocument[]> {
   return res.data
 }
 
+export async function getCvDocument(cvId: number): Promise<CvDocument> {
+  const res = await api.get<CvDocument>(`/cvs/${cvId}`)
+  return res.data
+}
+
 /**
  * Tải CV lên. Backend trả 202 khi đã xếp hàng bóc tách, hoặc 200 kèm CV cũ khi đúng bộ byte đó
  * đã bóc tách trước đó — đọc `status` trong body là biết còn phải poll hay không.

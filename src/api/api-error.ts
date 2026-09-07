@@ -25,12 +25,18 @@ export function normalizeError(error: unknown): ApiError {
 
   const { status, data } = error.response
   const body = (data ?? {}) as ApiErrorResponse
+  const fields = body.fields ?? body.fieldErrors
+
+  let message = body.message ?? defaultMessageFor(status)
+  if (fields && Object.keys(fields).length > 0) {
+    message = Object.values(fields).join('. ')
+  }
 
   return {
     status,
     code: body.code ?? `HTTP_${status}`,
-    message: body.message ?? defaultMessageFor(status),
-    fieldErrors: body.fieldErrors,
+    message,
+    fieldErrors: fields,
   }
 }
 
@@ -59,7 +65,12 @@ function defaultMessageFor(status: number): string {
 
 /** Lấy thông điệp hiển thị được từ bất kỳ lỗi nào (API hoặc lỗi lạ). */
 export function getErrorMessage(error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): string {
-  if (isApiError(error)) return error.message
+  if (isApiError(error)) {
+    if (error.fieldErrors && Object.keys(error.fieldErrors).length > 0) {
+      return Object.values(error.fieldErrors).join('. ')
+    }
+    return error.message
+  }
   return error instanceof Error ? error.message : fallback
 }
 

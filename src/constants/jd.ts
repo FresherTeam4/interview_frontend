@@ -7,7 +7,11 @@ export const JD_STATUS = {
 
 export const JD_STATUS_LABEL: Record<JobDescriptionStatus, string> = {
   DRAFT: 'Bản nháp',
-  READY: 'Đã xác nhận',
+  UPLOADED: 'Đã tải lên',
+  EXTRACTING: 'Đang trích xuất',
+  ANALYZING: 'Đang phân tích AI',
+  READY: 'Đã sẵn sàng',
+  FAILED: 'Thất bại',
 }
 
 export const JD_SOURCE_TYPE_LABEL: Record<JobDescriptionSourceType, string> = {

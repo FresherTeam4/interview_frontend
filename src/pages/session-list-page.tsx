@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, History, Play, Plus, Sparkles } from 'lucide-react'
+import { ArrowRight, Award, Clock, History, Loader2, Play, Plus } from 'lucide-react'
 import { Link } from 'react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,7 +22,8 @@ import type { InterviewSessionSummary, SessionListScope } from '@/types/session'
 function SessionCard({ session }: { session: InterviewSessionSummary }) {
   const isReady = session.status === 'READY'
   const isInProgress = session.status === 'IN_PROGRESS' || session.status === 'PAUSED'
-  const isCompleted = session.status === 'COMPLETED' || session.status === 'SCORING'
+  const isCompleted = session.status === 'COMPLETED'
+  const isScoring = session.status === 'SCORING'
   const isGenerating = session.status === 'CREATED' || session.status === 'SCRIPT_GENERATING'
 
   return (
@@ -37,20 +38,31 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
               {session.profileHeadline ?? `Hồ sơ #${session.profileId}`}
             </p>
           </div>
-          <Badge
-            variant={
-              isReady || isCompleted
-                ? 'default'
-                : isInProgress
-                  ? 'secondary'
-                  : session.status === 'FAILED'
-                    ? 'destructive'
-                    : 'outline'
-            }
-            className="text-[11px] shrink-0 font-medium"
-          >
-            {SESSION_STATUS_LABEL[session.status]}
-          </Badge>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <Badge
+              variant={
+                isCompleted
+                  ? 'default'
+                  : isReady
+                    ? 'default'
+                    : isInProgress
+                      ? 'secondary'
+                      : isScoring
+                        ? 'outline'
+                        : session.status === 'FAILED'
+                          ? 'destructive'
+                          : 'outline'
+              }
+              className="text-[11px] shrink-0 font-medium"
+            >
+              {SESSION_STATUS_LABEL[session.status]}
+            </Badge>
+            {isCompleted && session.overallScore !== null ? (
+              <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30 bg-primary/5">
+                {session.overallScore}/100 điểm
+              </Badge>
+            ) : null}
+          </div>
         </div>
       </CardHeader>
 
@@ -66,11 +78,21 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
             <strong className="text-foreground font-medium">{SESSION_MODE_LABEL[session.mode]}</strong>
           </div>
           <div className="truncate">
-            <span>Tiến độ: </span>
+            <span>Thời lượng: </span>
+            <strong className="text-foreground font-medium">
+              {session.durationMinutes ? `${session.durationMinutes} phút` : '30 phút'}
+            </strong>
+          </div>
+          <div className="truncate">
+            <span>Tương tác: </span>
             <strong className="text-foreground font-medium">
               {isReady
-                ? `${session.totalQuestionCount} câu hỏi`
-                : `${session.answeredQuestionCount}/${session.totalQuestionCount} câu`}
+                ? 'Sẵn sàng bắt đầu'
+                : isCompleted
+                  ? 'Đã hoàn tất'
+                  : isScoring
+                    ? 'Đang chấm điểm'
+                    : 'Đang đối thoại'}
             </strong>
           </div>
           <div className="truncate">
@@ -99,9 +121,19 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
                   <Play className="size-3.5 fill-current" />
                   <span>Tiếp tục phỏng vấn</span>
                 </>
+              ) : isScoring ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  <span>Đang chấm điểm...</span>
+                </>
+              ) : isCompleted ? (
+                <>
+                  <Award className="size-3.5" />
+                  <span>Xem báo cáo</span>
+                </>
               ) : isGenerating ? (
                 <>
-                  <Sparkles className="size-3.5" />
+                  <Loader2 className="size-3.5 animate-spin" />
                   <span>Theo dõi tiến trình</span>
                 </>
               ) : (
@@ -174,7 +206,7 @@ export default function SessionListPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Phiên phỏng vấn"
-        description="Luyện tập phỏng vấn kỹ thuật trực tiếp với câu hỏi sinh riêng từ CV và JD của bạn."
+        description="Luyện tập phỏng vấn kỹ thuật trực tiếp với AI đóng vai phỏng vấn viên, đối thoại tự do theo thời lượng bám sát CV và JD của bạn."
         actions={
           <Button asChild>
             <Link to={ROUTES.sessionCreate}>
@@ -188,7 +220,7 @@ export default function SessionListPage() {
       <Tabs value={scope} onValueChange={(v) => setScope(v as SessionListScope)}>
         <TabsList className="grid w-full grid-cols-2 max-w-xs">
           <TabsTrigger value="ACTIVE" className="gap-1.5">
-            <Sparkles className="size-3.5" />
+            <Clock className="size-3.5" />
             Đang diễn ra
           </TabsTrigger>
           <TabsTrigger value="HISTORY" className="gap-1.5">

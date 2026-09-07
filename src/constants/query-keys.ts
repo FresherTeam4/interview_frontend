@@ -12,4 +12,5 @@ export const QUERY_KEYS = {
   sessionList: (scope: string, page: number, size: number) =>
     ['sessions', 'list', scope, page, size] as const,
   session: (id: number) => ['sessions', id] as const,
+  sessionReport: (id: number) => ['sessions', id, 'report'] as const,
 }

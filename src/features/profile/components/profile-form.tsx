@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { BadgeCheck, Save, TriangleAlert, Undo2 } from 'lucide-react'
+import { BadgeCheck, Save, TriangleAlert, Undo2, UserRoundPen } from 'lucide-react'
 import { FormProvider, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -44,6 +45,11 @@ interface ProfileFormProps {
 export default function ProfileForm({ profile }: ProfileFormProps) {
   const updateProfile = useUpdateCandidateProfile(profile.id)
   const confirmProfile = useConfirmCandidateProfile(profile.id)
+  const [savedProfile, setSavedProfile] = useState<CandidateProfile | null>(null)
+  const currentProfile =
+    savedProfile && savedProfile.id === profile.id && savedProfile.version >= profile.version
+      ? savedProfile
+      : profile
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -56,11 +62,12 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
   const handleSave = form.handleSubmit(
     async (values) => {
       try {
-        const saved = await updateProfile.mutateAsync(toUpdateRequest(values))
+        const saved = await updateProfile.mutateAsync(toUpdateRequest(values, currentProfile))
+        setSavedProfile(saved)
         // Response kèm id của những hàng vừa được thêm → reset để lần lưu sau sửa đúng hàng đó
         // thay vì thêm mới lần nữa.
         form.reset(toFormValues(saved))
-        toast.success('Đã lưu hồ sơ.')
+        toast.success('Đã lưu hồ sơ thành công.')
       } catch (error) {
         toast.error(getErrorMessage(error))
       }
@@ -109,17 +116,26 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
           </Alert>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Thông tin chung</CardTitle>
-            <CardDescription>
-              Quyết định độ khó và hướng câu hỏi mà AI sẽ dùng cho buổi phỏng vấn.
-            </CardDescription>
+        <Card className="border-border/80 shadow-xs">
+          <CardHeader className="border-b border-border/40 pb-4 bg-muted/15 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <UserRoundPen className="size-4.5" />
+              </div>
+              <div>
+                <CardTitle className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
+                  Thông tin chung
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  Quyết định độ khó và chiều sâu đối thoại mà AI sẽ dùng cho buổi phỏng vấn.
+                </CardDescription>
+              </div>
+            </div>
             <CardAction>
               <Badge variant="outline">{PROFILE_SOURCE_LABEL[profile.source]}</Badge>
             </CardAction>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="grid gap-3 sm:grid-cols-2 pt-5">
             <ProfileTextField
               id="headline"
               label="Tiêu đề"
@@ -171,7 +187,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
             type="button"
             variant="outline"
             disabled={!isDirty || isBusy}
-            onClick={() => form.reset(toFormValues(profile))}
+            onClick={() => form.reset(toFormValues(currentProfile))}
           >
             <Undo2 className="size-4" />
             Hoàn tác
@@ -179,7 +195,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
           <span className="text-xs text-muted-foreground">
             {isDirty
               ? 'Có thay đổi chưa lưu.'
-              : `Cập nhật lần cuối: ${formatDateTime(profile.updatedAt)}`}
+              : `Cập nhật lần cuối: ${formatDateTime(currentProfile.updatedAt)}`}
           </span>
         </div>
       </form>

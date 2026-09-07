@@ -147,12 +147,39 @@
   }
 }
 
-/* Ẩn thanh cuộn mặc định cho cảm giác ứng dụng mượt mà không bị lệch layout */
+/* Utility classes cho hiệu ứng hiện đại */
 @utility no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+@utility glass-card {
+  background-color: color-mix(in oklch, var(--card) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+}
+
+@utility gradient-border {
+  border-image: linear-gradient(to bottom right, var(--primary), transparent) 1;
+}
+
+/* Custom sleek scrollbar cho desktop */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--muted-foreground) 25%, transparent);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
 }
 

@@ -1,10 +1,13 @@
 import { useState, type KeyboardEvent } from 'react'
-import { AlertCircle, ArrowUp, Loader2, Play, RefreshCw } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertCircle, ArrowUp, Loader2, Play, RefreshCw, RotateCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { getErrorMessage } from '@/api/api-error'
+import { QUERY_KEYS } from '@/constants/query-keys'
 import { useResumeSession, useRetrySession, useSubmitTextAnswer } from '@/hooks/use-interview-session'
+import { cn } from '@/lib/utils'
 import type { InterviewSession } from '@/types/session'
 
 interface InterviewAnswerInputProps {
@@ -13,36 +16,39 @@ interface InterviewAnswerInputProps {
 
 export default function InterviewAnswerInput({ session }: InterviewAnswerInputProps) {
   const [content, setContent] = useState('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const queryClient = useQueryClient()
   const submitAnswer = useSubmitTextAnswer(session.id)
   const resumeSession = useResumeSession(session.id)
   const retrySession = useRetrySession(session.id)
 
   const isPaused = session.status === 'PAUSED'
-  const isFailed = session.status === 'FAILED'
-  const isEvaluating =
-    session.status === 'IN_PROGRESS' && session.awaitingAction === 'ENGINE_RESPONSE'
-  const isWaitingAnswer =
-    session.status === 'IN_PROGRESS' && session.awaitingAction === 'CANDIDATE_ANSWER'
+  const isEngineRetry = session.awaitingAction === 'ENGINE_RETRY'
+  const isFailed = session.status === 'FAILED' || isEngineRetry
 
-  // Tìm turnId của câu hỏi hiện tại
-  const promptTurnId =
-    session.currentPrompt?.turnId ??
-    [...session.turns].reverse().find((t) => t.role === 'INTERVIEWER')?.id
+  // Tìm turnIndex và turnId của lượt phỏng vấn hiện tại
+  const lastInterviewerTurn = [...session.turns].reverse().find((t) => t.role === 'INTERVIEWER')
+  const expectedTurnIndex =
+    session.currentTurnIndex ?? lastInterviewerTurn?.turnIndex ?? 0
+  const promptTurnId = session.currentPrompt?.turnId ?? lastInterviewerTurn?.id ?? 0
 
   async function handleSubmit() {
-    if (!content.trim() || !promptTurnId) return
+    if (!content.trim() || submitAnswer.isPending) return
 
     const clientTurnId = crypto.randomUUID()
+    const answerText = content.trim()
+    setContent('')
     try {
       await submitAnswer.mutateAsync({
         promptTurnId,
-        content: content.trim(),
+        expectedTurnIndex,
+        content: answerText,
         clientTurnId,
         expectedVersion: session.version,
       })
-      setContent('')
     } catch (error) {
       toast.error(getErrorMessage(error))
+      setContent(answerText)
     }
   }
 
@@ -71,32 +77,62 @@ export default function InterviewAnswerInput({ session }: InterviewAnswerInputPr
     }
   }
 
+  async function handleRefresh() {
+    setIsRefreshing(true)
+    try {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session(session.id) })
+      toast.success('Đã làm mới dữ liệu phiên phỏng vấn.')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   if (isFailed) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-center">
-        <div className="flex items-center gap-2 text-destructive text-sm font-medium">
+      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center shadow-xs">
+        <div className="flex items-center gap-2 text-destructive text-sm font-semibold">
           <AlertCircle className="size-4 shrink-0" />
-          <span>{session.statusMessage ?? 'Đã xảy ra sự cố khi xử lý câu trả lời.'}</span>
+          <span>
+            {session.statusMessage
+              ? `Hệ thống: ${session.statusMessage}`
+              : 'Quá thời gian phản hồi hoặc AI gặp sự cố tạm thời.'}
+          </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void handleRetry()}
-          disabled={retrySession.isPending}
-          className="gap-1.5 text-xs"
-        >
-          {retrySession.isPending ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" />
-              Đang thử lại...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="size-3.5" />
-              Thử lại lượt này
-            </>
-          )}
-        </Button>
+        <p className="text-xs text-muted-foreground max-w-lg">
+          Lượt trả lời của bạn đã được lưu lại trên máy chủ. Bạn có thể bấm &ldquo;Thử lại lượt này&rdquo; để yêu cầu AI tiếp tục xử lý hoặc bấm &ldquo;Làm mới dữ liệu&rdquo; để cập nhật trạng thái mới nhất.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => void handleRetry()}
+            disabled={retrySession.isPending}
+            className="gap-1.5 text-xs font-medium"
+          >
+            {retrySession.isPending ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                Đang thử lại...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="size-3.5" />
+                Thử lại lượt này
+              </>
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleRefresh()}
+            disabled={isRefreshing}
+            className="gap-1.5 text-xs font-medium"
+          >
+            <RotateCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
+            Làm mới dữ liệu
+          </Button>
+        </div>
       </div>
     )
   }
@@ -125,12 +161,8 @@ export default function InterviewAnswerInput({ session }: InterviewAnswerInputPr
         value={content}
         onChange={(e) => setContent(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={
-          isEvaluating
-            ? 'AI đang suy nghĩ và chuẩn bị phản hồi...'
-            : 'Nhập câu trả lời của bạn... (nhấn Ctrl + Enter để gửi)'
-        }
-        disabled={!isWaitingAnswer || submitAnswer.isPending || isEvaluating}
+        placeholder="Nhập câu trả lời của bạn... (nhấn Ctrl + Enter để gửi)"
+        disabled={submitAnswer.isPending}
         rows={1}
         className="flex-1 resize-none border-0 bg-transparent py-1 px-2.5 shadow-none focus-visible:ring-0 text-sm leading-relaxed min-h-[36px] max-h-[140px]"
       />
@@ -145,7 +177,7 @@ export default function InterviewAnswerInput({ session }: InterviewAnswerInputPr
         <Button
           size="icon"
           onClick={() => void handleSubmit()}
-          disabled={!content.trim() || !isWaitingAnswer || submitAnswer.isPending || !promptTurnId}
+          disabled={!content.trim() || submitAnswer.isPending}
           className="size-8 rounded-xl shrink-0 shadow-xs"
           title="Gửi câu trả lời (Ctrl + Enter)"
         >

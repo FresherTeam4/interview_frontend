@@ -33,10 +33,13 @@ export interface ProfileProject {
 /** `GET /api/profiles/{id}`, `PUT /api/profiles/{id}`, `POST /api/profiles/{id}/confirm`. */
 export interface CandidateProfile {
   id: number
+  version: number
+  name: string
   cvDocumentId: number | null
   /** Thứ duy nhất giúp người dùng nhận ra hồ sơ nào của CV nào. */
   cvOriginalFilename: string | null
   headline: string | null
+  summary: string | null
   yearsExperience: number | null
   targetPosition: string | null
   seniorityLevel: string | null
@@ -76,7 +79,10 @@ export interface ProfileSummary {
  * toàn bộ, làm mất liên kết FK "câu hỏi này sinh ra từ kỹ năng / dự án nào".
  */
 export interface UpdateProfileRequest {
+  version: number
+  name: string
   headline: string | null
+  summary: string | null
   yearsExperience: number | null
   targetPosition: string | null
   seniorityLevel: string | null

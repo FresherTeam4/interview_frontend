@@ -1,4 +1,4 @@
-import { CheckCircle2, History, Sparkles } from 'lucide-react'
+import { CheckCircle2, History, Plus } from 'lucide-react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -22,7 +22,7 @@ export default function InterviewCompletedView({ session }: InterviewCompletedVi
           <div className="space-y-0.5">
             <h2 className="font-semibold text-base text-foreground">
               {isScoring
-                ? `Buổi phỏng vấn đã hoàn tất (${session.answeredQuestionCount}/${session.totalQuestionCount} câu)!`
+                ? 'Buổi phỏng vấn đã kết thúc thành công!'
                 : 'Chúc mừng! Bạn đã hoàn thành phỏng vấn'}
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -42,7 +42,7 @@ export default function InterviewCompletedView({ session }: InterviewCompletedVi
           </Button>
           <Button size="sm" asChild className="text-xs gap-1.5 shadow-xs">
             <Link to={ROUTES.sessionCreate}>
-              <Sparkles className="size-3.5" />
+              <Plus className="size-3.5" />
               Luyện phiên mới
             </Link>
           </Button>
