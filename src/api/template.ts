@@ -4,15 +4,15 @@ import type {
   InterviewTemplateSummary,
   UpdateInterviewTemplateRequest,
   InterviewSessionOptions,
+  TemplatePageResponse,
 } from '@/types/template'
-import type { PageResponse } from '@/types/jd'
 
 export async function getInterviewTemplates(
   scope: 'mine' | 'public' = 'mine',
   page = 0,
   size = 20,
-): Promise<PageResponse<InterviewTemplateSummary>> {
-  const res = await api.get<PageResponse<InterviewTemplateSummary>>('/interview-templates', {
+): Promise<TemplatePageResponse<InterviewTemplateSummary>> {
+  const res = await api.get<TemplatePageResponse<InterviewTemplateSummary>>('/interview-templates', {
     params: { scope, page, size },
   })
   return res.data
@@ -36,6 +36,36 @@ export async function confirmInterviewTemplate(
   expectedVersion: number,
 ): Promise<InterviewTemplate> {
   const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/confirm`, {
+    expectedVersion,
+  })
+  return res.data
+}
+
+export async function publishInterviewTemplate(
+  id: number,
+  expectedVersion: number,
+): Promise<InterviewTemplate> {
+  const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/publish`, {
+    expectedVersion,
+  })
+  return res.data
+}
+
+export async function unpublishInterviewTemplate(
+  id: number,
+  expectedVersion: number,
+): Promise<InterviewTemplate> {
+  const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/unpublish`, {
+    expectedVersion,
+  })
+  return res.data
+}
+
+export async function archiveInterviewTemplate(
+  id: number,
+  expectedVersion: number,
+): Promise<InterviewTemplate> {
+  const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/archive`, {
     expectedVersion,
   })
   return res.data

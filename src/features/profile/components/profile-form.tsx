@@ -10,7 +10,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -105,7 +104,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
             <AlertDescription>
               {isDirty
                 ? 'Bạn đang có thay đổi chưa lưu. Lưu hồ sơ trước, rồi xác nhận.'
-                : 'Soát lại thông tin AI bóc tách từ CV. Khi đã đúng, bấm xác nhận để mở khoá buổi phỏng vấn.'}
+                : 'Soát lại thông tin AI trích xuất từ CV. Khi đã đúng, bấm xác nhận để mở khoá buổi phỏng vấn.'}
             </AlertDescription>
             <div className="col-start-2 mt-2">
               <Button type="button" size="sm" disabled={isDirty || isBusy} onClick={handleConfirm}>
@@ -126,9 +125,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
                 <CardTitle className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
                   Thông tin chung
                 </CardTitle>
-                <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                  Quyết định độ khó và chiều sâu đối thoại mà AI sẽ dùng cho buổi phỏng vấn.
-                </CardDescription>
               </div>
             </div>
             <CardAction>

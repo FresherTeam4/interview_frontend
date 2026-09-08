@@ -18,7 +18,6 @@ export default function EducationFields() {
     <FieldArraySection
       title="Học vấn"
       icon={GraduationCap}
-      description="Trường, bằng cấp và thời gian học."
       addLabel="Thêm học vấn"
       emptyLabel="Chưa có mục học vấn nào."
       count={fields.length}

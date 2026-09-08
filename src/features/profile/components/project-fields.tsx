@@ -20,7 +20,6 @@ export default function ProjectFields() {
     <FieldArraySection
       title="Dự án thực tế"
       icon={FolderGit2}
-      description="AI dựa vào phần này để hỏi đúng thứ bạn từng làm, nên hãy mô tả vai trò và công nghệ thật cụ thể."
       addLabel="Thêm dự án"
       emptyLabel="Chưa có dự án nào."
       count={fields.length}

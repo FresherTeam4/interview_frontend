@@ -24,6 +24,7 @@ import {
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
 import SessionCompleteDialog from '@/features/session/components/session-complete-dialog'
+import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { cn } from '@/lib/utils'
 import type { InterviewSession } from '@/types/session'
 
@@ -151,12 +152,14 @@ export default function InterviewRoomHeader({ session }: InterviewRoomHeaderProp
             </>
           ) : isFinished ? (
             <>
-              <Button size="sm" asChild className="gap-1.5 text-xs h-8 shadow-xs">
-                <Link to={ROUTES.sessionCreate}>
-                  <Plus className="size-3.5" />
-                  <span>Luyện phiên mới</span>
-                </Link>
-              </Button>
+              <CreateInterviewDialog
+                trigger={
+                  <Button size="sm" className="gap-1.5 text-xs h-8 shadow-xs">
+                    <Plus className="size-3.5" />
+                    <span>Luyện phiên mới</span>
+                  </Button>
+                }
+              />
               <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
                 <Link to={ROUTES.sessionList}>
                   <History className="size-3.5" />

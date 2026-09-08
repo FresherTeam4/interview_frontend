@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { FileUp, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import CvStatusTracker from '@/features/profile/components/cv-status-tracker'
 import { uploadCv } from '@/api/cv'
 import { getErrorMessage } from '@/api/api-error'
 import { profileDetailPath } from '@/constants/routes'
+import { QUERY_KEYS } from '@/constants/query-keys'
 import type { CvDocument } from '@/types/cv'
 
 interface CvUploadDialogProps {
@@ -25,6 +27,7 @@ interface CvUploadDialogProps {
 
 export default function CvUploadDialog({ trigger, onSuccess }: CvUploadDialogProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedCv, setUploadedCv] = useState<CvDocument | null>(null)
@@ -36,9 +39,14 @@ export default function CvUploadDialog({ trigger, onSuccess }: CvUploadDialogPro
       const cvDoc = await uploadCv(file)
       setUploadedCv(cvDoc)
 
-      // Nếu CV này đã được bóc tách từ trước (Backend trả status = PARSED ngay)
+      // Cập nhật ngay danh sách tệp CV để tab "Tệp CV đã tải" hiển thị tệp mới tức thì
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cvDocuments })
+      onSuccess?.()
+
+      // Nếu CV này đã được trích xuất từ trước (Backend trả status = PARSED ngay)
       if (cvDoc.status === 'PARSED' && cvDoc.profileId) {
         setCompletedProfileId(cvDoc.profileId)
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
         toast.success('Hồ sơ đã sẵn sàng từ CV này!')
       }
     } catch (err) {
@@ -50,6 +58,8 @@ export default function CvUploadDialog({ trigger, onSuccess }: CvUploadDialogPro
 
   function handleParsed(profileId: number) {
     setCompletedProfileId(profileId)
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cvDocuments })
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
     onSuccess?.()
   }
 
@@ -61,7 +71,7 @@ export default function CvUploadDialog({ trigger, onSuccess }: CvUploadDialogPro
   }
 
   function handleOpenChange(newOpen: boolean) {
-    // Không cho đóng khi đang tải file hoặc đang bóc tách
+    // Không cho đóng khi đang tải file hoặc đang trích xuất
     if (!newOpen && isUploading) return
     setOpen(newOpen)
     if (!newOpen) {
@@ -86,9 +96,8 @@ export default function CvUploadDialog({ trigger, onSuccess }: CvUploadDialogPro
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle>Tải lên CV ứng viên</DialogTitle>
-          <DialogDescription>
-            Tải file CV định dạng PDF để AI tự động trích xuất thông tin, kinh nghiệm và kỹ năng thành
-            hồ sơ chuẩn bị cho các buổi phỏng vấn.
+          <DialogDescription className="sr-only">
+            Tải file CV định dạng PDF để tạo hồ sơ phỏng vấn.
           </DialogDescription>
         </DialogHeader>
 

@@ -35,13 +35,22 @@ export interface InterviewTemplate {
 
 export interface InterviewTemplateSummary {
   id: number
+  sourceJobDescriptionId?: number
   title: string
   jobTitle?: string
   targetSeniority?: string
   confirmed: boolean
   published: boolean
-  createdAt: string
+  archivedAt?: string
+  createdAt?: string
   updatedAt: string
+}
+
+export interface TemplatePageResponse<T> {
+  content: T[]
+  page: number
+  size: number
+  totalElements: number
 }
 
 export interface UpdateInterviewTemplateRequest {

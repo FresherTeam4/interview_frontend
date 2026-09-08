@@ -1,6 +1,6 @@
 import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
 import ProfileSelector from '@/features/session/components/wizard/profile-selector'
 import { cn } from '@/lib/utils'
@@ -33,17 +33,17 @@ interface StepConfigProps {
 const STYLE_DETAILS: Record<string, { label: string; desc: string; icon: React.ReactNode }> = {
   FRIENDLY: {
     label: 'Thân thiện & Gợi mở',
-    desc: 'Phỏng vấn viên tạo không khí thoải mái, gợi ý khi bạn bối rối, phù hợp để làm quen.',
+    desc: 'Thoải mái, gợi ý khi gặp khó.',
     icon: <HeartHandshake className="size-4 text-emerald-500" />,
   },
   PROFESSIONAL: {
     label: 'Chuyên nghiệp & Chuẩn mực',
-    desc: 'Đúng quy chuẩn phỏng vấn tại các tập đoàn lớn, hỏi sâu vào logic và giải pháp.',
+    desc: 'Chuẩn mực, hỏi sâu logic và giải pháp.',
     icon: <Briefcase className="size-4 text-blue-500" />,
   },
   CHALLENGING: {
-    label: 'Khắt khe & Đào sâu (Stress Test)',
-    desc: 'Liên tục đối thoại phản biện, vặn lại giải pháp để kiểm tra bản lĩnh và chiều sâu kỹ thuật.',
+    label: 'Khắt khe (Stress Test)',
+    desc: 'Phản biện sâu, thử thách bản lĩnh kỹ thuật.',
     icon: <Flame className="size-4 text-amber-500" />,
   },
 }
@@ -82,9 +82,6 @@ export default function StepConfig({
       <Card className="border-border/80">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-semibold">Cấu hình buổi phỏng vấn thử</CardTitle>
-          <CardDescription className="text-xs">
-            Chọn hồ sơ của bạn và tùy chỉnh phong cách của phỏng vấn viên AI.
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Profile Selection */}

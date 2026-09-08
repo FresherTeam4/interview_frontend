@@ -1,7 +1,7 @@
 import { api } from '@/api/client'
 import type { CvDocument, CvFileUrl } from '@/types/cv'
 
-// Chỉ upload cần nới timeout (file 5 MB qua đường lên chậm). Bóc tách chạy nền ở backend nên
+// Chỉ upload cần nới timeout (file 5 MB qua đường lên chậm). Trích xuất chạy nền ở backend nên
 // mọi request khác trả về ngay, dùng timeout 15s mặc định của client là đủ.
 const UPLOAD_TIMEOUT_MS = 60_000
 
@@ -16,8 +16,8 @@ export async function getCvDocument(cvId: number): Promise<CvDocument> {
 }
 
 /**
- * Tải CV lên. Backend trả 202 khi đã xếp hàng bóc tách, hoặc 200 kèm CV cũ khi đúng bộ byte đó
- * đã bóc tách trước đó — đọc `status` trong body là biết còn phải poll hay không.
+ * Tải CV lên. Backend trả 202 khi đã xếp hàng trích xuất, hoặc 200 kèm CV cũ khi đúng bộ byte đó
+ * đã trích xuất trước đó — đọc `status` trong body là biết còn phải poll hay không.
  */
 export async function uploadCv(file: File): Promise<CvDocument> {
   const formData = new FormData()

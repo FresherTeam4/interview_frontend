@@ -83,8 +83,8 @@ export default function ProfileDetailPage() {
         title={profile?.headline ?? 'Hồ sơ ứng viên'}
         description={
           profile?.cvOriginalFilename
-            ? `Bóc tách từ CV ${profile.cvOriginalFilename}`
-            : 'Tổng quan điểm nhấn ứng viên và chuẩn bị cho các chủ đề phỏng vấn sâu.'
+            ? `Trích xuất từ ${profile.cvOriginalFilename}`
+            : undefined
         }
         actions={
           <div className="flex items-center gap-2">

@@ -8,10 +8,10 @@ export const CV_STATUS = {
 export type CvDocumentStatus = (typeof CV_STATUS)[keyof typeof CV_STATUS]
 
 export const CV_STATUS_LABEL: Record<CvDocumentStatus, string> = {
-  UPLOADED: 'Chờ bóc tách',
-  PARSING: 'Đang bóc tách',
-  PARSED: 'Đã bóc tách',
-  FAILED: 'Bóc tách lỗi',
+  UPLOADED: 'Chờ trích xuất',
+  PARSING: 'Đang trích xuất',
+  PARSED: 'Đã trích xuất',
+  FAILED: 'Trích xuất lỗi',
 }
 
 /** UPLOADED = đang xếp hàng, PARSING = đang chạy — cả hai đều cần poll lại. */

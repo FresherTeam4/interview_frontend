@@ -1,9 +1,11 @@
 export const ROUTES = {
-  home: '/',
+  home: '/dashboard',
+  dashboard: '/dashboard',
   cv: '/cv',
   profile: '/profile',
   /** Mẫu route cho react-router; dùng {@link profileDetailPath} để dựng link thật. */
   profileDetail: '/profile/:profileId',
+  roles: '/roles',
   jd: '/jd',
   jdCreate: '/jd/create',
   /** Mẫu route cho react-router; dùng {@link jdDetailPath} để dựng link thật. */

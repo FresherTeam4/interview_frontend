@@ -1,6 +1,6 @@
 /**
  * Backend nhận `seniorityLevel` là chuỗi tự do tối đa 30 ký tự, không phải enum — đây chỉ là
- * danh sách gợi ý, đúng bằng enum mà prompt bóc tách yêu cầu AI trả về
+ * danh sách gợi ý, đúng bằng enum mà prompt trích xuất yêu cầu AI trả về
  * (ai/cv-parse-schema-v1.json). Người dùng vẫn nhập được giá trị khác.
  */
 export const SENIORITY_LEVEL_SUGGESTIONS = [
@@ -27,7 +27,7 @@ export const SKILL_CATEGORY_SUGGESTIONS = [
 export type ProfileSource = 'AUTO_PARSED' | 'USER_EDITED'
 
 export const PROFILE_SOURCE_LABEL: Record<ProfileSource, string> = {
-  AUTO_PARSED: 'AI bóc tách',
+  AUTO_PARSED: 'AI trích xuất',
   USER_EDITED: 'Bạn đã sửa',
 }
 

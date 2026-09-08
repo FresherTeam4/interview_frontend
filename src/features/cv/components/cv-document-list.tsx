@@ -38,7 +38,7 @@ export default function CvDocumentList({
   return (
     <ul className="divide-y divide-border rounded-lg border border-border">
       {documents.map((cv) => {
-        // Bóc tách chạy nền: đang PARSING thì backend chặn cả /parse lẫn DELETE (409).
+        // Trích xuất chạy nền: đang PARSING thì backend chặn cả /parse lẫn DELETE (409).
         const isParsing = cv.status === CV_STATUS.PARSING
         const isBusy = busyId === cv.id
         const canRetry = cv.status === CV_STATUS.FAILED
@@ -51,7 +51,7 @@ export default function CvDocumentList({
               <p className="truncate text-sm font-medium">{cv.originalFilename}</p>
               <p className="text-xs text-muted-foreground">
                 {formatFileSize(cv.fileSizeBytes)} · Tải lên {formatDateTime(cv.uploadedAt)}
-                {cv.parsedAt ? ` · Bóc tách ${formatDateTime(cv.parsedAt)}` : ''}
+                {cv.parsedAt ? ` · Trích xuất ${formatDateTime(cv.parsedAt)}` : ''}
               </p>
               {canRetry && cv.statusMessage ? (
                 <p className="flex items-center gap-1.5 text-xs text-destructive">
@@ -87,7 +87,7 @@ export default function CvDocumentList({
               {canRetry ? (
                 <Button size="sm" disabled={isBusy} onClick={() => onRetryParse(cv.id)}>
                   <RotateCcw className="size-4" />
-                  Bóc tách lại
+                  Trích xuất lại
                 </Button>
               ) : null}
 
@@ -106,7 +106,7 @@ export default function CvDocumentList({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Xoá CV này?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {cv.originalFilename} và hồ sơ được bóc tách từ nó sẽ không còn hiện ra nữa.
+                      {cv.originalFilename} và hồ sơ được trích xuất từ nó sẽ không còn hiện ra nữa.
                       Thao tác này không hoàn lại được.
                     </AlertDialogDescription>
                   </AlertDialogHeader>

@@ -231,15 +231,14 @@ export default function InterviewReportView({
             <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
               AI đang phân tích & chấm điểm buổi phỏng vấn
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Hệ thống đang thẩm định {session.turns?.length || 0} lượt đối thoại và đối chiếu với các tiêu chí trong JD vị trí{' '}
-              <strong className="text-foreground">{session.jobDescription.title}</strong> để lập báo cáo đánh giá & lộ trình ôn luyện.
+            <p className="text-xs text-muted-foreground">
+              Đang phân tích {session.turns?.length || 0} lượt đối thoại và đối chiếu tiêu chí JD để lập báo cáo đánh giá.
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-primary font-medium bg-primary/10 px-3.5 py-1.5 rounded-full border border-primary/20">
             <Loader2 className="size-3.5 animate-spin" />
-            <span>Đang tổng hợp điểm số, thế mạnh & lộ trình (khoảng 20 – 45 giây)...</span>
+            <span>Đang chấm điểm (khoảng 20 – 45 giây)...</span>
           </div>
 
           <div className="flex items-center gap-2 pt-1">

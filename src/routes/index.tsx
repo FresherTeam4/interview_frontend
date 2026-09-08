@@ -11,6 +11,7 @@ import NotFoundPage from '@/pages/not-found-page'
 import ProfileDetailPage from '@/pages/profile-detail-page'
 import ProfilePage from '@/pages/profile-page'
 import RegisterPage from '@/pages/register-page'
+import RolesPage from '@/pages/roles-page'
 import SessionCreatePage from '@/pages/session-create-page'
 import SessionDetailPage from '@/pages/session-detail-page'
 import SessionListPage from '@/pages/session-list-page'
@@ -35,11 +36,12 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       {
-        path: ROUTES.home,
+        path: '/',
         element: <RootLayout />,
         errorElement: <RouteErrorBoundary />,
         children: [
-          { index: true, element: <DashboardPage /> },
+          { index: true, element: <Navigate to={ROUTES.dashboard} replace /> },
+          { path: 'dashboard', element: <DashboardPage /> },
 
           // CV được gộp hoàn toàn vào Hồ sơ ứng viên
           { path: 'cv', element: <Navigate to={ROUTES.profile} replace /> },
@@ -47,10 +49,11 @@ export const router = createBrowserRouter([
           { path: ROUTES.profile, element: <ProfilePage /> },
           { path: ROUTES.profileDetail, element: <ProfileDetailPage /> },
 
-          // JD được gộp hoàn toàn vào luồng Tạo phỏng vấn
-          { path: 'jd', element: <Navigate to={ROUTES.sessionCreate} replace /> },
-          { path: 'jd/create', element: <Navigate to={ROUTES.sessionCreate} replace /> },
-          { path: 'jd/:jobDescriptionId', element: <Navigate to={ROUTES.sessionCreate} replace /> },
+          // Vị trí phỏng vấn (Interview Roles / Templates)
+          { path: ROUTES.roles, element: <RolesPage /> },
+          { path: 'jd', element: <Navigate to={ROUTES.roles} replace /> },
+          { path: 'jd/create', element: <Navigate to={ROUTES.roles} replace /> },
+          { path: 'templates', element: <Navigate to={ROUTES.roles} replace /> },
 
           // Quản lý và Phòng phỏng vấn
           { path: ROUTES.sessionList, element: <SessionListPage /> },

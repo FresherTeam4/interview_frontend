@@ -59,11 +59,11 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
         </CardTitle>
         <CardDescription>
           {isGenerating
-            ? 'Hệ thống đang chuẩn bị kế hoạch phỏng vấn và đối thoại thích ứng theo CV & JD. Bạn không cần làm mới trang.'
+            ? 'Đang chuẩn bị phiên phỏng vấn...'
             : isReady
-              ? 'Phòng phỏng vấn đã sẵn sàng! Bạn có thể bắt đầu đối thoại tự do theo thời lượng ngay.'
+              ? 'Phòng phỏng vấn đã sẵn sàng.'
               : isFailed
-                ? 'Thiết lập kế hoạch phỏng vấn gặp sự cố. Bạn có thể thử lại.'
+                ? 'Thiết lập phiên gặp sự cố.'
                 : SESSION_STATUS_LABEL[session.status]}
         </CardDescription>
       </CardHeader>

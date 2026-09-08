@@ -30,13 +30,13 @@ export default function CvStatusTracker({ cvId, onParsed, onCancel }: CvStatusTr
         setCv(doc)
 
         if (doc.status === 'PARSED' && doc.profileId) {
-          toast.success('Bóc tách CV thành công!')
+          toast.success('Trích xuất CV thành công!')
           onParsed(doc.profileId)
           return
         }
 
         if (doc.status === 'FAILED') {
-          setErrorMessage(doc.statusMessage || 'Quá trình bóc tách CV gặp sự cố.')
+          setErrorMessage(doc.statusMessage || 'Quá trình trích xuất thông tin CV gặp sự cố.')
           return
         }
 
@@ -64,7 +64,7 @@ export default function CvStatusTracker({ cvId, onParsed, onCancel }: CvStatusTr
     try {
       const doc = await retryParseCv(cvId)
       setCv(doc)
-      toast.info('Đang thử bóc tách lại...')
+      toast.info('Đang thử trích xuất lại...')
     } catch (err) {
       setErrorMessage(getErrorMessage(err))
       toast.error('Không thể thử lại: ' + getErrorMessage(err))
@@ -97,9 +97,9 @@ export default function CvStatusTracker({ cvId, onParsed, onCancel }: CvStatusTr
 
         <h3 className="font-semibold text-lg">
           {isFailed
-            ? 'Bóc tách CV thất bại'
+            ? 'Trích xuất CV thất bại'
             : isParsed
-              ? 'Hoàn tất bóc tách CV!'
+              ? 'Hoàn tất trích xuất CV!'
               : 'AI đang phân tích hồ sơ CV của bạn…'}
         </h3>
         <p className="text-xs text-muted-foreground max-w-sm">

@@ -25,9 +25,9 @@ export default function ProfileSelector({
           <UserRoundPen className="size-5" />
         </div>
         <div>
-          <h4 className="font-semibold text-sm">Bạn chưa có hồ sơ ứng viên</h4>
+          <h4 className="font-semibold text-sm">Chưa có hồ sơ ứng viên</h4>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Hãy tải CV lên để AI bóc tách thông tin và tự động tạo hồ sơ phỏng vấn cho bạn.
+            Tải CV để bắt đầu phỏng vấn.
           </p>
         </div>
         <CvUploadDialog

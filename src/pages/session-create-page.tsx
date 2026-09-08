@@ -10,7 +10,6 @@ export default function SessionCreatePage() {
     <div className="flex flex-col gap-6 max-w-3xl mx-auto w-full pb-12">
       <PageHeader
         title="Tạo phiên phỏng vấn mới"
-        description="Chọn mẫu phỏng vấn chuẩn hoặc nhập Mô tả công việc (JD) để AI phỏng vấn thử theo đúng kỳ vọng của bạn."
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to={ROUTES.home}>

@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { Check, FileCheck, FileText, Settings2 } from 'lucide-react'
+import { Briefcase, Check, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
-import StepJdOrTemplate from '@/features/session/components/wizard/step-jd-or-template'
-import StepTemplateReview from '@/features/session/components/wizard/step-template-review'
+import StepRoleSelector from '@/features/session/components/wizard/step-role-selector'
 import StepConfig from '@/features/session/components/wizard/step-config'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
 import { confirmCandidateProfile } from '@/api/profile'
-import { confirmInterviewTemplate, getInterviewSessionOptions } from '@/api/template'
-import { createTextJd, getJobDescription } from '@/api/jd'
+import { confirmInterviewTemplate, getInterviewSessionOptions, getInterviewTemplate } from '@/api/template'
 import { api } from '@/api/client'
 import { getErrorMessage } from '@/api/api-error'
 import { saveCreatedSession } from '@/features/session/services/session-mock-service'
@@ -17,17 +15,27 @@ import { cn } from '@/lib/utils'
 import type { InterviewTemplate, InterviewSessionOptions } from '@/types/template'
 
 const STEPS = [
-  { step: 1, title: 'Chọn vị trí / JD', icon: FileText },
-  { step: 2, title: 'Soát lại tiêu chí', icon: FileCheck },
-  { step: 3, title: 'Hồ sơ & Cấu hình', icon: Settings2 },
+  { step: 1, title: 'Vị trí phỏng vấn', icon: Briefcase },
+  { step: 2, title: 'Hồ sơ & Cấu hình', icon: Settings2 },
 ]
 
-export default function CreateInterviewWizard() {
+interface CreateInterviewWizardProps {
+  initialTemplateId?: number
+  initialTemplate?: InterviewTemplate
+  onSuccess?: (sessionId: number) => void
+  onCancel?: () => void
+}
+
+export default function CreateInterviewWizard({
+  initialTemplateId,
+  initialTemplate,
+  onSuccess,
+}: CreateInterviewWizardProps = {}) {
   const navigate = useNavigate()
   const profilesQuery = useCandidateProfiles()
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
+  const [currentStep, setCurrentStep] = useState<1 | 2>(initialTemplate ? 2 : 1)
 
-  const [selectedTemplate, setSelectedTemplate] = useState<InterviewTemplate | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<InterviewTemplate | null>(initialTemplate || null)
   const [selectedProfileId, setSelectedProfileId] = useState<number | undefined>(undefined)
 
   const [options, setOptions] = useState<InterviewSessionOptions>({
@@ -43,6 +51,20 @@ export default function CreateInterviewWizard() {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Load template if only initialTemplateId provided
+  useEffect(() => {
+    if (initialTemplateId && !selectedTemplate) {
+      void getInterviewTemplate(initialTemplateId)
+        .then((tmpl) => {
+          setSelectedTemplate(tmpl)
+          setCurrentStep(2)
+        })
+        .catch(() => {
+          // Ignored
+        })
+    }
+  }, [initialTemplateId, selectedTemplate])
 
   // Load session options
   useEffect(() => {
@@ -71,7 +93,7 @@ export default function CreateInterviewWizard() {
 
   async function handleSubmit() {
     if (!selectedTemplate || !effectiveProfileId) {
-      toast.error('Vui lòng chọn hồ sơ ứng viên trước khi bắt đầu.')
+      toast.error('Vui lòng chọn vị trí và hồ sơ ứng viên trước khi bắt đầu.')
       return
     }
 
@@ -79,7 +101,7 @@ export default function CreateInterviewWizard() {
     const idempotencyKey = `session-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
     try {
-      let realTemplateId = selectedTemplate.id
+      const realTemplateId = selectedTemplate.id
 
       // 1. Xác nhận hồ sơ ứng viên trên Backend (Bắt buộc theo nghiệp vụ)
       try {
@@ -88,36 +110,16 @@ export default function CreateInterviewWizard() {
         // Bỏ qua nếu đã confirm
       }
 
-      // 2. Nếu là preset template (id < 0), tự động đồng bộ sang JD trên Backend
-      if (realTemplateId < 0) {
-        toast.info('Đang đồng bộ mẫu phỏng vấn lên máy chủ AI...')
-        const createdJd = await createTextJd({
-          title: selectedTemplate.title,
-          text: selectedTemplate.content?.summary || selectedTemplate.title,
-        })
-        // Chờ AI backend trích xuất template
-        for (let i = 0; i < 15; i++) {
-          await new Promise((r) => setTimeout(r, 1000))
-          const checkJd = await getJobDescription(createdJd.id)
-          if (checkJd.templateId) {
-            realTemplateId = checkJd.templateId
-            break
-          }
+      // 2. Xác nhận Template trên Backend nếu chưa xác nhận (Bắt buộc theo nghiệp vụ)
+      if (!selectedTemplate.confirmed) {
+        try {
+          await confirmInterviewTemplate(realTemplateId, selectedTemplate.version ?? 0)
+        } catch {
+          // Bỏ qua nếu đã confirm
         }
       }
 
-      if (realTemplateId <= 0) {
-        throw new Error('Chưa thể thiết lập mẫu phỏng vấn trên máy chủ. Vui lòng thử lại.')
-      }
-
-      // 3. Xác nhận Template trên Backend (Bắt buộc theo nghiệp vụ)
-      try {
-        await confirmInterviewTemplate(realTemplateId, selectedTemplate.version ?? 0)
-      } catch {
-        // Bỏ qua nếu đã confirm
-      }
-
-      // 4. Gọi API tạo session thực tế trên Backend
+      // 3. Gọi API tạo session thực tế trên Backend
       const res = await api.post<{ id: number; status: string }>(
         '/interview-sessions',
         {
@@ -133,7 +135,6 @@ export default function CreateInterviewWizard() {
       )
 
       const sessionId = res.data.id
-
       const activeProfile = profilesQuery.data?.find((p) => p.id === effectiveProfileId)
 
       // Lưu tóm tắt phiên để hiển thị lịch sử trên dashboard
@@ -146,7 +147,11 @@ export default function CreateInterviewWizard() {
       })
 
       toast.success('Khởi tạo phòng phỏng vấn thành công trên máy chủ!')
-      navigate(sessionDetailPath(sessionId))
+      if (onSuccess) {
+        onSuccess(sessionId)
+      } else {
+        navigate(sessionDetailPath(sessionId))
+      }
     } catch (error) {
       toast.error(getErrorMessage(error))
     } finally {
@@ -156,8 +161,8 @@ export default function CreateInterviewWizard() {
 
   return (
     <div className="space-y-6">
-      {/* Wizard Progress Stepper */}
-      <div className="flex items-center justify-between max-w-xl mx-auto px-4">
+      {/* Wizard Progress Stepper (2 Steps) */}
+      <div className="flex items-center justify-between max-w-sm mx-auto px-4">
         {STEPS.map((s, idx) => {
           const isDone = currentStep > s.step
           const isCurrent = currentStep === s.step
@@ -169,7 +174,7 @@ export default function CreateInterviewWizard() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (isDone) setCurrentStep(s.step as 1 | 2 | 3)
+                    if (isDone) setCurrentStep(s.step as 1 | 2)
                   }}
                   disabled={!isDone && !isCurrent}
                   className={cn(
@@ -195,7 +200,7 @@ export default function CreateInterviewWizard() {
               {idx < STEPS.length - 1 && (
                 <div
                   className={cn(
-                    'flex-1 h-0.5 mx-3 -mt-5 transition-colors',
+                    'flex-1 h-0.5 mx-4 -mt-5 transition-colors',
                     isDone ? 'bg-primary' : 'bg-border',
                   )}
                 />
@@ -208,7 +213,7 @@ export default function CreateInterviewWizard() {
       {/* Step Content */}
       <div className="pt-2">
         {currentStep === 1 && (
-          <StepJdOrTemplate
+          <StepRoleSelector
             selectedTemplate={selectedTemplate}
             onTemplateSelected={(tmpl) => setSelectedTemplate(tmpl)}
             onNext={() => setCurrentStep(2)}
@@ -216,15 +221,6 @@ export default function CreateInterviewWizard() {
         )}
 
         {currentStep === 2 && selectedTemplate && (
-          <StepTemplateReview
-            template={selectedTemplate}
-            onTemplateUpdated={(tmpl) => setSelectedTemplate(tmpl)}
-            onNext={() => setCurrentStep(3)}
-            onBack={() => setCurrentStep(1)}
-          />
-        )}
-
-        {currentStep === 3 && selectedTemplate && (
           <StepConfig
             template={selectedTemplate}
             profiles={profilesQuery.data || []}
@@ -235,7 +231,7 @@ export default function CreateInterviewWizard() {
             config={config}
             onChangeConfig={(updates) => setConfig((prev) => ({ ...prev, ...updates }))}
             onSubmit={() => void handleSubmit()}
-            onBack={() => setCurrentStep(2)}
+            onBack={() => setCurrentStep(1)}
             isSubmitting={isSubmitting}
           />
         )}

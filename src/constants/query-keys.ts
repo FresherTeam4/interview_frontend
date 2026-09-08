@@ -8,6 +8,9 @@ export const QUERY_KEYS = {
   profile: (profileId: number) => ['profiles', profileId] as const,
   jobDescriptions: ['job-descriptions'] as const,
   jobDescription: (id: number) => ['job-descriptions', id] as const,
+  interviewTemplates: (scope = 'mine', page = 0, size = 20) =>
+    ['interview-templates', scope, page, size] as const,
+  interviewTemplate: (id: number) => ['interview-templates', id] as const,
   sessions: ['sessions'] as const,
   sessionList: (scope: string, page: number, size: number) =>
     ['sessions', 'list', scope, page, size] as const,

@@ -16,7 +16,7 @@ export interface CvDocument {
   statusMessage: string | null
   uploadedAt: string
   parsedAt: string | null
-  /** null khi chưa bóc tách xong hoặc bóc tách thất bại. */
+  /** null khi chưa trích xuất xong hoặc trích xuất thất bại. */
   profileId: number | null
   profileConfirmed: boolean
   profileHeadline: string | null

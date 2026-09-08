@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { CandidateProfile } from '@/types/profile'
 
 interface ProfileHighlightsProps {
@@ -236,9 +236,6 @@ export default function ProfileHighlights({
                 <Cpu className="size-4 text-primary" />
                 <span>Trọng tâm kỹ thuật & Hệ sinh thái công nghệ</span>
               </CardTitle>
-              <CardDescription className="text-xs mt-0.5">
-                Các kỹ năng bóc tách được phân nhóm để đánh giá độ rộng và chiều sâu công nghệ.
-              </CardDescription>
             </div>
             <Badge variant="secondary" className="text-xs">
               {profile.skills.length} kỹ năng
@@ -341,9 +338,6 @@ export default function ProfileHighlights({
                 <FolderGit2 className="size-4 text-primary" />
                 <span>Dự án thực tế & Điểm nhấn kinh nghiệm</span>
               </CardTitle>
-              <CardDescription className="text-xs mt-0.5">
-                Phần lớn các câu hỏi kỹ thuật chuyên sâu sẽ được AI đào sâu từ các dự án này.
-              </CardDescription>
             </div>
             <Badge variant="secondary" className="text-xs">
               {profile.projects.length} dự án
@@ -441,9 +435,6 @@ export default function ProfileHighlights({
             <Compass className="size-4" />
             <span>Định hướng trọng tâm đối thoại từ AI</span>
           </CardTitle>
-          <CardDescription className="text-xs">
-            Dựa trên hồ sơ kỹ thuật của bạn, buổi phỏng vấn sẽ tập trung khai thác các khía cạnh sau:
-          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-xs leading-relaxed text-foreground">
           <div className="flex items-start gap-2.5">

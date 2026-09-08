@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import EmptyState from '@/components/empty-state'
 import ErrorState from '@/components/error-state'
 import PageHeader from '@/components/page-header'
+import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { getErrorMessage } from '@/api/api-error'
 import { useSessions } from '@/hooks/use-interview-session'
-import { ROUTES, sessionDetailPath } from '@/constants/routes'
+import { sessionDetailPath } from '@/constants/routes'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
   SESSION_MODE_LABEL,
@@ -177,16 +177,28 @@ function SessionTabContent({ scope }: { scope: SessionListScope }) {
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        title={scope === 'ACTIVE' ? 'Chưa có phiên phỏng vấn đang diễn ra' : 'Chưa có lịch sử phỏng vấn'}
-        description={
-          scope === 'ACTIVE'
-            ? 'Hãy tạo một phiên phỏng vấn mới để bắt đầu luyện tập với AI.'
-            : 'Các phiên bạn hoàn thành sẽ xuất hiện tại đây.'
-        }
-        actionLabel={scope === 'ACTIVE' ? 'Tạo phiên phỏng vấn' : undefined}
-        onAction={scope === 'ACTIVE' ? () => { window.location.href = ROUTES.sessionCreate } : undefined}
-      />
+      <div className="rounded-xl border border-dashed border-border p-12 text-center space-y-4 bg-muted/10 max-w-md mx-auto">
+        <div className="space-y-1">
+          <h3 className="font-semibold text-base">
+            {scope === 'ACTIVE' ? 'Chưa có phiên phỏng vấn đang diễn ra' : 'Chưa có lịch sử phỏng vấn'}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {scope === 'ACTIVE'
+              ? 'Tạo một phiên phỏng vấn mới để bắt đầu luyện tập với AI.'
+              : 'Các phiên hoàn thành sẽ xuất hiện tại đây.'}
+          </p>
+        </div>
+        {scope === 'ACTIVE' && (
+          <CreateInterviewDialog
+            trigger={
+              <Button size="sm" className="gap-1.5 text-xs">
+                <Plus className="size-3.5" />
+                Tạo phiên phỏng vấn
+              </Button>
+            }
+          />
+        )}
+      </div>
     )
   }
 
@@ -206,14 +218,15 @@ export default function SessionListPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Phiên phỏng vấn"
-        description="Luyện tập phỏng vấn kỹ thuật trực tiếp với AI đóng vai phỏng vấn viên, đối thoại tự do theo thời lượng bám sát CV và JD của bạn."
         actions={
-          <Button asChild>
-            <Link to={ROUTES.sessionCreate}>
-              <Plus className="size-4" />
-              Tạo phiên mới
-            </Link>
-          </Button>
+          <CreateInterviewDialog
+            trigger={
+              <Button className="gap-2">
+                <Plus className="size-4" />
+                Tạo phiên mới
+              </Button>
+            }
+          />
         }
       />
 

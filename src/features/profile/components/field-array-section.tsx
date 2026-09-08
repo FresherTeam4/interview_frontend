@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 interface FieldArraySectionProps {
   title: string
-  description: string
+  description?: string
   icon?: ComponentType<LucideProps>
   addLabel: string
   emptyLabel: string
@@ -44,9 +44,11 @@ export default function FieldArraySection({
             <CardTitle className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
               {title}
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground mt-0.5">
-              {description}
-            </CardDescription>
+            {description ? (
+              <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                {description}
+              </CardDescription>
+            ) : null}
           </div>
         </div>
       </CardHeader>

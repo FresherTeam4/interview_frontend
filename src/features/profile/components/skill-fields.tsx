@@ -23,7 +23,6 @@ export default function SkillFields() {
     <FieldArraySection
       title="Kỹ năng"
       icon={Wrench}
-      description="Ngôn ngữ, framework, database, công cụ… mà bạn thực sự dùng được."
       addLabel="Thêm kỹ năng"
       emptyLabel="Chưa có kỹ năng nào."
       count={fields.length}

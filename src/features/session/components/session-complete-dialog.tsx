@@ -68,14 +68,10 @@ export default function SessionCompleteDialog({
             </span>
           </div>
 
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Hệ thống AI sẽ phân tích toàn bộ các lượt đối thoại đa chiều đã diễn ra để đánh giá mức độ đáp ứng theo yêu cầu của CV và JD, từ đó xuất báo cáo năng lực chi tiết.
-          </p>
-
           <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-foreground">
             <CheckCircle2 className="size-4 shrink-0 text-primary mt-0.5" />
             <span>
-              Quá trình chấm điểm diễn ra tự động. Sau khi hoàn tất, báo cáo chi tiết kèm điểm số và gợi ý cải thiện sẽ hiển thị ngay cho bạn.
+              AI sẽ phân tích đối thoại và xuất báo cáo đánh giá chi tiết kèm gợi ý cải thiện.
             </span>
           </div>
         </div>

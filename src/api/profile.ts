@@ -1,7 +1,7 @@
 import { api } from '@/api/client'
 import type { CandidateProfile, ProfileSummary, UpdateProfileRequest } from '@/types/profile'
 
-/** Chưa bóc tách CV nào thì trả `200 []`, không phải 404. */
+/** Chưa trích xuất CV nào thì trả `200 []`, không phải 404. */
 export async function getCandidateProfiles(): Promise<ProfileSummary[]> {
   const res = await api.get<ProfileSummary[]>('/profiles')
   return res.data

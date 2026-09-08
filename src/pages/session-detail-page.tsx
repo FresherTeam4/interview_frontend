@@ -1,5 +1,6 @@
-import { ArrowLeft, RotateCw } from 'lucide-react'
-import { Link, useParams } from 'react-router'
+import { Plus, RotateCw } from 'lucide-react'
+import { useParams } from 'react-router'
+import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,7 +10,6 @@ import InterviewRoom from '@/features/session/components/interview-room'
 import SessionStatusCard from '@/features/session/components/session-status-card'
 import { getErrorMessage } from '@/api/api-error'
 import { useSession } from '@/hooks/use-interview-session'
-import { ROUTES } from '@/constants/routes'
 import { cn } from '@/lib/utils'
 
 export default function SessionDetailPage() {
@@ -62,7 +62,6 @@ export default function SessionDetailPage() {
     <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
       <PageHeader
         title={`Phiên phỏng vấn${parsedId ? ` #${parsedId}` : ''}`}
-        description="Theo dõi trạng thái phiên phỏng vấn."
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -83,12 +82,14 @@ export default function SessionDetailPage() {
               <RotateCw className={cn('size-3.5', sessionQuery.isFetching && 'animate-spin')} />
               Làm mới
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to={ROUTES.sessionCreate}>
-                <ArrowLeft className="size-4" />
-                Tạo phiên mới
-              </Link>
-            </Button>
+            <CreateInterviewDialog
+              trigger={
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Plus className="size-3.5" />
+                  Tạo phiên mới
+                </Button>
+              }
+            />
           </div>
         }
       />

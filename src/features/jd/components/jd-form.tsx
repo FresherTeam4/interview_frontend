@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { Copy, Info, Save, ShieldCheck } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -72,11 +72,6 @@ export default function JdForm({ jd }: JdFormProps) {
       <CardHeader className="flex-row items-start justify-between gap-2">
         <div>
           <CardTitle>Thông tin JD</CardTitle>
-          <CardDescription>
-            {isReady
-              ? 'JD đã được xác nhận và dùng làm nguyên liệu phỏng vấn. Bạn có thể tạo bản sao để chỉnh sửa.'
-              : 'Rà soát và chỉnh sửa nội dung, sau đó xác nhận để dùng cho phỏng vấn.'}
-          </CardDescription>
         </div>
         <JdStatusBadge status={jd.status} />
       </CardHeader>

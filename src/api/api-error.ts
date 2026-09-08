@@ -32,6 +32,10 @@ export function normalizeError(error: unknown): ApiError {
     message = Object.values(fields).join('. ')
   }
 
+  if (body.code === 'CV_LIMIT_REACHED' || message?.includes('You can keep at most')) {
+    message = 'Bạn đã đạt giới hạn tối đa 10 CV. Vui lòng chuyển sang tab "Tệp CV đã tải" để xoá bớt CV cũ hoặc tệp lỗi.'
+  }
+
   return {
     status,
     code: body.code ?? `HTTP_${status}`,

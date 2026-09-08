@@ -2,6 +2,7 @@ import { CheckCircle2, History, Plus } from 'lucide-react'
 import { Link } from 'react-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { ROUTES } from '@/constants/routes'
 import type { InterviewSession } from '@/types/session'
 
@@ -27,8 +28,8 @@ export default function InterviewCompletedView({ session }: InterviewCompletedVi
             </h2>
             <p className="text-xs text-muted-foreground">
               {isScoring
-                ? 'Hệ thống đang hoàn tất lưu trữ hội thoại và xử lý dữ liệu của phiên.'
-                : 'Toàn bộ câu trả lời của bạn đã được ghi nhận đầy đủ theo từng lượt đối thoại.'}
+                ? 'Đang xử lý dữ liệu và hoàn tất phiên...'
+                : 'Đã ghi nhận toàn bộ câu trả lời của bạn.'}
             </p>
           </div>
         </div>
@@ -40,12 +41,14 @@ export default function InterviewCompletedView({ session }: InterviewCompletedVi
               Lịch sử phiên
             </Link>
           </Button>
-          <Button size="sm" asChild className="text-xs gap-1.5 shadow-xs">
-            <Link to={ROUTES.sessionCreate}>
-              <Plus className="size-3.5" />
-              Luyện phiên mới
-            </Link>
-          </Button>
+          <CreateInterviewDialog
+            trigger={
+              <Button size="sm" className="text-xs gap-1.5 shadow-xs">
+                <Plus className="size-3.5" />
+                Luyện phiên mới
+              </Button>
+            }
+          />
         </div>
       </CardContent>
     </Card>

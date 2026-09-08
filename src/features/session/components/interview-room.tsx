@@ -54,12 +54,6 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
                 <span>Lịch sử đối thoại ({turnCount})</span>
               </Button>
             </div>
-
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              {activeTab === 'report'
-                ? 'Báo cáo chi tiết năng lực & lộ trình hành động từ AI'
-                : 'Toàn bộ các lượt đối thoại thực tế trong phiên phỏng vấn'}
-            </span>
           </div>
 
           {/* Active Tab Content */}

@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import SkillEditor from '@/features/session/components/wizard/skill-editor'
 import { updateInterviewTemplate, confirmInterviewTemplate } from '@/api/template'
 import type { InterviewTemplate, KeySkill } from '@/types/template'
@@ -86,9 +86,6 @@ export default function StepTemplateReview({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-semibold">Xem lại tiêu chí phỏng vấn</CardTitle>
-              <CardDescription className="text-xs">
-                Kiểm tra các thông tin trọng tâm mà AI sẽ sử dụng để hỏi và chấm điểm cho bạn.
-              </CardDescription>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-success font-medium bg-success/10 px-2.5 py-1 rounded-full">
               <CheckCircle2 className="size-3.5" />

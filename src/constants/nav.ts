@@ -1,4 +1,4 @@
-import { LayoutDashboard, MessageSquareText, UserRoundPen, type LucideIcon } from 'lucide-react'
+import { Briefcase, LayoutDashboard, MessageSquareText, UserRoundPen, type LucideIcon } from 'lucide-react'
 import { ROUTES } from '@/constants/routes'
 
 export interface NavItem {
@@ -9,10 +9,11 @@ export interface NavItem {
   end?: boolean
 }
 
-/** 3 luồng chức năng trọng tâm của hệ thống */
+/** Các luồng chức năng trọng tâm của hệ thống */
 export const NAV_ITEMS: NavItem[] = [
   { to: ROUTES.home, label: 'Tổng quan', icon: LayoutDashboard, end: true },
   { to: ROUTES.profile, label: 'Hồ sơ ứng viên', icon: UserRoundPen },
-  { to: ROUTES.sessionList, label: 'Luyện phỏng vấn', icon: MessageSquareText },
+  { to: ROUTES.roles, label: 'Vị trí phỏng vấn', icon: Briefcase },
+  { to: ROUTES.sessionList, label: 'Phiên phỏng vấn', icon: MessageSquareText },
 ]
 
