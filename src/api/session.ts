@@ -42,9 +42,13 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
         id: number
         turnIndex: number
         role: 'INTERVIEWER' | 'CANDIDATE'
-        contentText: string
+        contentText?: string
+        content?: string
         action?: 'OPENING' | 'EXPLORE' | 'FOLLOW_UP' | 'HANDLE_REQUEST' | 'CLOSE'
         focusAreaCode?: string | null
+        requestId?: string | null
+        processingStatus?: 'PROCESSING' | 'COMPLETED' | 'FAILED' | null
+        processingErrorCode?: string | null
         createdAt: string
       }>
     }>(`/interview-sessions/${sessionId}/conversation`),
@@ -85,33 +89,38 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
     mappedStatus = 'ABANDONED'
   }
 
-    const mappedTurns = (conv.turns || []).map((t: {
-      id: number
-      turnIndex: number
-      role: 'INTERVIEWER' | 'CANDIDATE'
-      content?: string
-      contentText?: string
-      action?: 'OPENING' | 'EXPLORE' | 'FOLLOW_UP' | 'HANDLE_REQUEST' | 'CLOSE'
-      focusAreaCode?: string | null
-      createdAt: string
-    }) => ({
-      id: t.id,
-      turnIndex: t.turnIndex,
-      role: t.role,
-      inputMode: 'TEXT' as const,
-      content: t.content || t.contentText || '',
-      isFollowUp: t.action === 'FOLLOW_UP',
-      followUpDepth: t.action === 'FOLLOW_UP' ? 1 : 0,
-      createdAt: t.createdAt,
-    }))
+  const mappedTurns = (conv.turns || []).map((t) => ({
+    id: t.id,
+    turnIndex: t.turnIndex,
+    role: t.role,
+    inputMode: 'TEXT' as const,
+    content: t.content || t.contentText || '',
+    isFollowUp: t.action === 'FOLLOW_UP',
+    followUpDepth: t.action === 'FOLLOW_UP' ? 1 : 0,
+    requestId: t.requestId,
+    processingStatus: t.processingStatus,
+    processingErrorCode: t.processingErrorCode,
+    createdAt: t.createdAt,
+  }))
 
   const latestTurn = mappedTurns[mappedTurns.length - 1]
 
   let awaitingAction: InterviewSession['awaitingAction'] = 'NONE'
+  let statusMessage: string | null = null
+
   if (mappedStatus === 'READY') {
     awaitingAction = 'START_SESSION'
   } else if (mappedStatus === 'IN_PROGRESS') {
-    awaitingAction = latestTurn?.role === 'INTERVIEWER' ? 'CANDIDATE_ANSWER' : 'ENGINE_RESPONSE'
+    if (latestTurn?.role === 'INTERVIEWER') {
+      awaitingAction = 'CANDIDATE_ANSWER'
+    } else if (latestTurn?.role === 'CANDIDATE') {
+      if (latestTurn.processingStatus === 'FAILED' || latestTurn.processingErrorCode) {
+        awaitingAction = 'ENGINE_RETRY'
+        statusMessage = 'Quá thời gian phản hồi hoặc AI gặp sự cố (500). Bạn có thể thử lại lượt này.'
+      } else {
+        awaitingAction = 'ENGINE_RESPONSE'
+      }
+    }
   } else if (mappedStatus === 'SCORING' || mappedStatus === 'COMPLETED') {
     awaitingAction = 'REPORT'
   }
@@ -149,7 +158,7 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
         : null,
     turns: mappedTurns,
     voiceDraft: null,
-    statusMessage: null,
+    statusMessage,
     lastActivityAt: new Date().toISOString(),
     startedAt: conv.startedAt,
     completedAt: conv.status === 'COMPLETED' ? new Date().toISOString() : null,
@@ -321,7 +330,8 @@ export async function submitTextAnswer(
   sessionId: number,
   data: SubmitTextAnswerRequest,
 ): Promise<TextAnswerAccepted> {
-  const idempotencyKey = `ans-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  const idempotencyKey =
+    data.clientTurnId || `ans-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
   // Gửi trực tiếp đến endpoint AI của backend: POST /api/interview-sessions/{id}/answers
   const res = await api.post<{

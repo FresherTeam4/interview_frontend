@@ -127,7 +127,7 @@ export function useSubmitTextAnswer(sessionId: number) {
 
         queryClient.setQueryData<InterviewSession>(QUERY_KEYS.session(sessionId), {
           ...previousSession,
-          awaitingAction: 'CANDIDATE_ANSWER',
+          awaitingAction: 'ENGINE_RESPONSE',
           turns: [...previousSession.turns, optimisticTurn],
         })
       }

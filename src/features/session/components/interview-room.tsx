@@ -17,16 +17,40 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
   const isScoring = session.status === 'SCORING'
   const isFailed = session.status === 'SCORING_FAILED'
   const isFinished = isCompleted || isScoring || isFailed
+  const [activeTab, setActiveTab] = useState<'report' | 'chat'>('report')
   const isEvaluating =
     session.status === 'IN_PROGRESS' && session.awaitingAction === 'ENGINE_RESPONSE'
+  const [autoPlayAudio, setAutoPlayAudio] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('interview_auto_play_audio')
+      return saved === null ? true : saved === 'true'
+    } catch {
+      return true
+    }
+  })
 
-  const [activeTab, setActiveTab] = useState<'report' | 'chat'>('report')
+  const handleToggleAutoPlayAudio = () => {
+    setAutoPlayAudio((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('interview_auto_play_audio', String(next))
+      } catch {
+        // ignore
+      }
+      return next
+    })
+  }
+
   const turnCount = session.turns?.length || 0
 
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Compact Top Header Bar */}
-      <InterviewRoomHeader session={session} />
+      <InterviewRoomHeader
+        session={session}
+        autoPlayAudio={autoPlayAudio}
+        onToggleAutoPlayAudio={handleToggleAutoPlayAudio}
+      />
 
       {/* Main Room Content: 100% Screen Width */}
       {isFinished ? (
@@ -45,7 +69,7 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
                 <span>Báo cáo đánh giá</span>
               </Button>
               <Button
-                variant={activeTab === 'chat' ? 'ghost' : 'default'}
+                variant={activeTab === 'chat' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveTab('chat')}
                 className="gap-1.5 text-xs font-medium"
@@ -74,9 +98,11 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 min-h-0">
                 <InterviewChatView
+                  sessionId={session.id}
                   turns={session.turns}
                   isEvaluating={false}
                   statusMessage={session.statusMessage}
+                  autoPlayLatest={false}
                 />
               </CardContent>
             </Card>
@@ -88,6 +114,7 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
           <Card className="flex flex-col overflow-hidden shadow-xs border min-h-[480px] max-h-[66vh]">
             <CardContent className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 min-h-0">
               <InterviewChatView
+                sessionId={session.id}
                 turns={session.turns}
                 isEvaluating={isEvaluating}
                 statusMessage={
@@ -95,6 +122,7 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
                     ? session.statusMessage
                     : null
                 }
+                autoPlayLatest={autoPlayAudio}
               />
             </CardContent>
           </Card>

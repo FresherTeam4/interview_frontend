@@ -28,24 +28,32 @@ import CreateInterviewDialog from '@/features/session/components/wizard/create-i
 import { useInterviewTemplates } from '@/hooks/use-interview-templates'
 import { getErrorMessage } from '@/api/api-error'
 import { getInterviewTemplate } from '@/api/template'
+import DataPagination from '@/components/data-pagination'
 import type { InterviewTemplate, InterviewTemplateSummary } from '@/types/template'
 
 const SENIORITIES = ['ALL', 'INTERN', 'FRESHER', 'JUNIOR', 'MIDDLE', 'SENIOR', 'LEAD'] as const
+const PAGE_SIZE = 6
 
 export default function RolesPage() {
   const [activeTab, setActiveTab] = useState<'mine' | 'public'>('mine')
   const [searchQuery, setSearchQuery] = useState('')
   const [seniorityFilter, setSeniorityFilter] = useState<string>('ALL')
 
+  const [minePage, setMinePage] = useState(0)
+  const [publicPage, setPublicPage] = useState(0)
+
   const [detailRoleId, setDetailRoleId] = useState<number | null>(null)
   const [practiceTemplate, setPracticeTemplate] = useState<InterviewTemplate | null>(null)
   const [practiceDialogOpen, setPracticeDialogOpen] = useState(false)
 
-  const mineQuery = useInterviewTemplates('mine', 0, 50)
-  const publicQuery = useInterviewTemplates('public', 0, 50)
+  const mineQuery = useInterviewTemplates('mine', 0, 100)
+  const publicQuery = useInterviewTemplates('public', 0, 100)
 
   const currentQuery = activeTab === 'mine' ? mineQuery : publicQuery
   const currentList = currentQuery.data?.content || []
+
+  const currentPage = activeTab === 'mine' ? minePage : publicPage
+  const setCurrentPage = activeTab === 'mine' ? setMinePage : setPublicPage
 
   const filteredRoles = currentList.filter((role) => {
     if (role.archivedAt) return false
@@ -61,6 +69,13 @@ export default function RolesPage() {
 
     return matchesSearch && matchesSeniority
   })
+
+  const totalPages = Math.ceil(filteredRoles.length / PAGE_SIZE) || 1
+  const safePage = Math.min(currentPage, totalPages - 1)
+  const paginatedRoles = filteredRoles.slice(
+    safePage * PAGE_SIZE,
+    (safePage + 1) * PAGE_SIZE,
+  )
 
   async function handleStartPractice(roleSummaryOrTemplate: InterviewTemplateSummary | InterviewTemplate) {
     if ('content' in roleSummaryOrTemplate && roleSummaryOrTemplate.content) {
@@ -135,15 +150,26 @@ export default function RolesPage() {
     }
 
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredRoles.map((role) => (
-          <RoleCard
-            key={role.id}
-            role={role}
-            onViewDetail={(id) => setDetailRoleId(id)}
-            onPractice={handleStartPractice}
-          />
-        ))}
+      <div className="space-y-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {paginatedRoles.map((role) => (
+            <RoleCard
+              key={role.id}
+              role={role}
+              onViewDetail={(id) => setDetailRoleId(id)}
+              onPractice={handleStartPractice}
+            />
+          ))}
+        </div>
+
+        <DataPagination
+          page={safePage}
+          totalPages={totalPages}
+          totalElements={filteredRoles.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={(newPage) => setCurrentPage(newPage)}
+          itemName="vị trí"
+        />
       </div>
     )
   }
@@ -195,7 +221,11 @@ export default function RolesPage() {
               <Input
                 placeholder="Tìm theo tên vị trí..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setMinePage(0)
+                  setPublicPage(0)
+                }}
                 className="pl-8 text-xs h-9"
               />
             </div>
@@ -209,7 +239,11 @@ export default function RolesPage() {
                 <button
                   key={lvl}
                   type="button"
-                  onClick={() => setSeniorityFilter(lvl)}
+                  onClick={() => {
+                    setSeniorityFilter(lvl)
+                    setMinePage(0)
+                    setPublicPage(0)
+                  }}
                   className={`text-[11px] px-2 py-1 rounded-md transition-colors shrink-0 font-medium ${
                     seniorityFilter === lvl
                       ? 'bg-primary text-primary-foreground font-semibold'

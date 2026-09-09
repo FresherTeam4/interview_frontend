@@ -8,16 +8,18 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ErrorState from '@/components/error-state'
 import PageHeader from '@/components/page-header'
+import DataPagination from '@/components/data-pagination'
 import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { getErrorMessage } from '@/api/api-error'
 import { useSessions } from '@/hooks/use-interview-session'
 import { sessionDetailPath } from '@/constants/routes'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
-  SESSION_MODE_LABEL,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
 import type { InterviewSessionSummary, SessionListScope } from '@/types/session'
+
+const PAGE_SIZE = 6
 
 function SessionCard({ session }: { session: InterviewSessionSummary }) {
   const isReady = session.status === 'READY'
@@ -57,11 +59,20 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
             >
               {SESSION_STATUS_LABEL[session.status]}
             </Badge>
-            {isCompleted && session.overallScore !== null ? (
-              <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30 bg-primary/5">
-                {session.overallScore}/100 điểm
-              </Badge>
-            ) : null}
+            {isCompleted &&
+              (session.overallScore !== null ? (
+                <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30 bg-primary/5">
+                  {session.overallScore}/100 điểm
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5"
+                  title="Chưa đủ độ bao phủ tiêu chí (dưới 50%) để kết luận điểm"
+                >
+                  Chưa đủ dữ liệu điểm
+                </Badge>
+              ))}
           </div>
         </div>
       </CardHeader>
@@ -72,10 +83,6 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
           <div className="truncate">
             <span>Độ khó: </span>
             <strong className="text-foreground font-medium">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</strong>
-          </div>
-          <div className="truncate">
-            <span>Hình thức: </span>
-            <strong className="text-foreground font-medium">{SESSION_MODE_LABEL[session.mode]}</strong>
           </div>
           <div className="truncate">
             <span>Thời lượng: </span>
@@ -151,8 +158,8 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
 }
 
 function SessionTabContent({ scope }: { scope: SessionListScope }) {
-  const [page] = useState(0)
-  const sessionsQuery = useSessions(scope, page, 30)
+  const [page, setPage] = useState(0)
+  const sessionsQuery = useSessions(scope, page, PAGE_SIZE)
 
   if (sessionsQuery.isPending) {
     return (
@@ -203,10 +210,21 @@ function SessionTabContent({ scope }: { scope: SessionListScope }) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {items.map((session) => (
-        <SessionCard key={session.id} session={session} />
-      ))}
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((session) => (
+          <SessionCard key={session.id} session={session} />
+        ))}
+      </div>
+
+      <DataPagination
+        page={sessionsQuery.data.page}
+        totalPages={sessionsQuery.data.totalPages}
+        totalElements={sessionsQuery.data.totalElements}
+        pageSize={sessionsQuery.data.size}
+        onPageChange={(newPage) => setPage(newPage)}
+        itemName="phiên phỏng vấn"
+      />
     </div>
   )
 }

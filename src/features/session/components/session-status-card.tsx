@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -7,7 +8,6 @@ import { getErrorMessage } from '@/api/api-error'
 import { useRetrySession, useStartSession } from '@/hooks/use-interview-session'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
-  SESSION_MODE_LABEL,
   SESSION_STATUS,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
@@ -25,6 +25,19 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
     session.status === SESSION_STATUS.SCRIPT_GENERATING
   const isFailed = session.status === SESSION_STATUS.FAILED
   const isReady = session.status === SESSION_STATUS.READY
+
+  // Thông báo khi AI hoàn tất chuẩn bị hoặc gặp lỗi
+  const prevStatusRef = useRef(session.status)
+  useEffect(() => {
+    if (prevStatusRef.current !== session.status) {
+      if (session.status === SESSION_STATUS.READY) {
+        toast.success('Phòng phỏng vấn đã sẵn sàng! Bạn có thể bắt đầu ngay.')
+      } else if (session.status === SESSION_STATUS.FAILED) {
+        toast.error('Quá trình chuẩn bị kịch bản phỏng vấn gặp sự cố.')
+      }
+      prevStatusRef.current = session.status
+    }
+  }, [session.status])
 
   async function handleRetry() {
     try {
@@ -68,7 +81,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
           <div>
             <p className="text-muted-foreground">Trạng thái</p>
             <Badge
@@ -92,10 +105,6 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
             <p className="font-medium">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Hình thức</p>
-            <p className="font-medium">{SESSION_MODE_LABEL[session.mode]}</p>
-          </div>
-          <div>
             <p className="text-muted-foreground">Trạng thái đối thoại</p>
             <p className="font-medium">
               {isGenerating
@@ -108,6 +117,18 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
             </p>
           </div>
         </div>
+
+        {isGenerating && (
+          <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3.5 text-xs">
+            <Loader2 className="size-4 animate-spin text-primary shrink-0" />
+            <div className="space-y-0.5">
+              <p className="font-semibold text-foreground">AI đang thiết lập kịch bản phỏng vấn</p>
+              <p className="text-muted-foreground">
+                Hệ thống đang phân tích CV và tiêu chí JD để khởi tạo kế hoạch phỏng vấn và câu hỏi mở đầu. Trang sẽ tự động sẵn sàng trong giây lát.
+              </p>
+            </div>
+          </div>
+        )}
 
         {session.statusMessage ? (
           <p className="text-sm text-destructive">{session.statusMessage}</p>

@@ -12,7 +12,6 @@ import {
   Loader2,
   MessageSquare,
   Play,
-  Printer,
   RefreshCw,
   Target,
   TrendingUp,
@@ -304,16 +303,6 @@ export default function InterviewReportView({
           </div>
 
           <div className="flex items-center gap-2 shrink-0 print:hidden w-full sm:w-auto justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.print()}
-              className="gap-1.5 text-xs h-8"
-              title="In hoặc lưu file PDF báo cáo"
-            >
-              <Printer className="size-3.5" />
-              <span className="hidden sm:inline">In báo cáo</span>
-            </Button>
             {onViewConversation && (
               <Button
                 variant="outline"

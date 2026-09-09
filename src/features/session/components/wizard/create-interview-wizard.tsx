@@ -146,7 +146,7 @@ export default function CreateInterviewWizard({
         durationMinutes: config.durationMinutes,
       })
 
-      toast.success('Khởi tạo phòng phỏng vấn thành công trên máy chủ!')
+      toast.info('Đã tạo phiên phỏng vấn. AI đang thiết lập kịch bản và câu hỏi...')
       if (onSuccess) {
         onSuccess(sessionId)
       } else {

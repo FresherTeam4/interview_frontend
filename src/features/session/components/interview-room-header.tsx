@@ -9,6 +9,8 @@ import {
   Play,
   Plus,
   User,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
@@ -20,7 +22,6 @@ import { useInterviewTimer } from '@/features/session/hooks/use-interview-timer'
 import { ROUTES } from '@/constants/routes'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
-  SESSION_MODE_LABEL,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
 import SessionCompleteDialog from '@/features/session/components/session-complete-dialog'
@@ -30,9 +31,15 @@ import type { InterviewSession } from '@/types/session'
 
 interface InterviewRoomHeaderProps {
   session: InterviewSession
+  autoPlayAudio?: boolean
+  onToggleAutoPlayAudio?: () => void
 }
 
-export default function InterviewRoomHeader({ session }: InterviewRoomHeaderProps) {
+export default function InterviewRoomHeader({
+  session,
+  autoPlayAudio = false,
+  onToggleAutoPlayAudio,
+}: InterviewRoomHeaderProps) {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const pauseSession = usePauseSession(session.id)
   const resumeSession = useResumeSession(session.id)
@@ -119,6 +126,35 @@ export default function InterviewRoomHeader({ session }: InterviewRoomHeaderProp
         <div className="flex items-center gap-2 shrink-0">
           {!isFinished && (session.status === 'IN_PROGRESS' || isPaused) ? (
             <>
+              {onToggleAutoPlayAudio ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onToggleAutoPlayAudio}
+                  className={cn(
+                    'gap-1.5 text-xs h-8 transition-colors',
+                    autoPlayAudio
+                      ? 'border-primary/40 text-primary bg-primary/10 hover:bg-primary/20 font-medium'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                  title={
+                    autoPlayAudio
+                      ? 'Tự động phát giọng đọc câu hỏi mới: Đang Bật'
+                      : 'Tự động phát giọng đọc câu hỏi mới: Đang Tắt'
+                  }
+                >
+                  {autoPlayAudio ? (
+                    <Volume2 className="size-3.5 text-primary" />
+                  ) : (
+                    <VolumeX className="size-3.5 text-muted-foreground" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {autoPlayAudio ? 'Tự đọc: Bật' : 'Tự đọc: Tắt'}
+                  </span>
+                </Button>
+              ) : null}
+
               <Button
                 variant="outline"
                 size="sm"
@@ -176,9 +212,6 @@ export default function InterviewRoomHeader({ session }: InterviewRoomHeaderProp
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
           <Badge variant="outline" className="text-[11px] font-normal py-0 h-5">
             Độ khó: <strong className="ml-1 font-semibold text-foreground">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</strong>
-          </Badge>
-          <Badge variant="outline" className="text-[11px] font-normal py-0 h-5">
-            Hình thức: <strong className="ml-1 font-semibold text-foreground">{SESSION_MODE_LABEL[session.mode]}</strong>
           </Badge>
           <span className="flex items-center gap-1 font-medium text-foreground ml-1">
             <MessageSquare className="size-3.5 text-primary" />

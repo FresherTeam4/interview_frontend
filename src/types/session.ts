@@ -37,6 +37,9 @@ export interface Turn {
   isFollowUp: boolean
   followUpDepth: number
   createdAt: string
+  requestId?: string | null
+  processingStatus?: 'PROCESSING' | 'COMPLETED' | 'FAILED' | null
+  processingErrorCode?: string | null
 }
 
 export interface CurrentPrompt {
