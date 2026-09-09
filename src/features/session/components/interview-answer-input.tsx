@@ -36,6 +36,7 @@ export default function InterviewAnswerInput({
   const isSubmittingVoice = externalIsSubmitting ?? internalIsSubmitting
   const setIsSubmittingVoice = externalSetIsSubmitting ?? setInternalIsSubmitting
 
+  const [textInput, setTextInput] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [cachedAudioBlob, setCachedAudioBlob] = useState<Blob | null>(null)
   const [cachedAnswerText, setCachedAnswerText] = useState<string | null>(null)
@@ -153,7 +154,6 @@ export default function InterviewAnswerInput({
       setCachedAnswerText(null)
       setCachedClientTurnId(null)
       setSubmissionError(null)
-      toast.success('Đã gửi câu trả lời thành công!')
     } catch (error) {
       const rawMsg = getErrorMessage(error)
       const friendlyMsg = formatFriendlyError(rawMsg)
@@ -213,7 +213,6 @@ export default function InterviewAnswerInput({
         setCachedAnswerText(null)
         setCachedClientTurnId(null)
         setSubmissionError(null)
-        toast.success('Đã gửi lại câu trả lời thành công!')
       } catch (error) {
         const rawMsg = getErrorMessage(error)
         const friendlyMsg = formatFriendlyError(rawMsg)
@@ -238,6 +237,52 @@ export default function InterviewAnswerInput({
     setCachedClientTurnId(null)
     setSubmissionError(null)
     void handleStartRecording()
+  }
+
+  async function handleSendText() {
+    const content = textInput.trim()
+    if (!content || submitAnswer.isPending || isSubmittingVoice || isEvaluating) return
+
+    stopAllInterviewAudio()
+    setIsSubmittingVoice(true)
+    try {
+      const clientTurnId = crypto.randomUUID()
+      const targetExpectedIndex = lastCandidateTurn
+        ? Math.max(0, lastCandidateTurn.turnIndex - 1)
+        : expectedTurnIndex
+
+      setTextInput('')
+      setCachedAnswerText(content)
+      setCachedClientTurnId(clientTurnId)
+      setSubmissionError(null)
+
+      await submitAnswer.mutateAsync({
+        promptTurnId,
+        expectedTurnIndex: targetExpectedIndex,
+        content,
+        clientTurnId,
+        expectedVersion: session.version,
+      })
+
+      setCachedAnswerText(null)
+      setCachedClientTurnId(null)
+      setSubmissionError(null)
+    } catch (error) {
+      const rawMsg = getErrorMessage(error)
+      const friendlyMsg = formatFriendlyError(rawMsg)
+      setSubmissionError(friendlyMsg)
+      setTextInput(content) // phục hồi lại văn bản cho người dùng nếu lỗi
+      toast.error('Không thể gửi câu trả lời: ' + friendlyMsg)
+    } finally {
+      setIsSubmittingVoice(false)
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      void handleSendText()
+    }
   }
 
   async function handleResume() {
@@ -347,17 +392,34 @@ export default function InterviewAnswerInput({
             </Button>
           ) : null}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleDiscardAndReRecord}
-            disabled={isSubmittingVoice || submitAnswer.isPending}
-            className="gap-1.5 text-xs font-medium"
-          >
-            <Mic className="size-3.5" />
-            <span>Thu âm lại</span>
-          </Button>
+          {session.mode === 'TEXT' ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setTextInput(failedAnswerContent || '')
+                setSubmissionError(null)
+                setCachedAnswerText(null)
+              }}
+              disabled={isSubmittingVoice || submitAnswer.isPending}
+              className="gap-1.5 text-xs font-medium"
+            >
+              <span>Sửa lại câu trả lời</span>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDiscardAndReRecord}
+              disabled={isSubmittingVoice || submitAnswer.isPending}
+              className="gap-1.5 text-xs font-medium"
+            >
+              <Mic className="size-3.5" />
+              <span>Thu âm lại</span>
+            </Button>
+          )}
         </div>
       </div>
     )
@@ -377,6 +439,56 @@ export default function InterviewAnswerInput({
           )}
           Tiếp tục phỏng vấn
         </Button>
+      </div>
+    )
+  }
+
+  /* Chế độ thuần văn bản (Chat) */
+  if (session.mode === 'TEXT') {
+    return (
+      <div className="relative flex flex-col gap-2 rounded-2xl border border-border/80 bg-card p-2 shadow-xs transition-all focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/10">
+        <textarea
+          value={textInput}
+          onChange={(e) => setTextInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isEvaluating || submitAnswer.isPending || isSubmittingVoice}
+          placeholder={
+            isEvaluating || submitAnswer.isPending || isSubmittingVoice
+              ? 'AI đang suy nghĩ và chuẩn bị câu hỏi tiếp theo...'
+              : 'Nhập câu trả lời của bạn tại đây (nhấn Enter để gửi, Shift + Enter để xuống dòng)...'
+          }
+          rows={2}
+          className="w-full resize-none bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-60 max-h-32 overflow-y-auto"
+        />
+
+        <div className="flex items-center justify-between px-2 pt-1 border-t border-border/40 text-xs">
+          <span className="text-[11px] text-muted-foreground hidden sm:inline">
+            💡 Nhấn <strong>Enter</strong> để gửi, <strong>Shift + Enter</strong> để xuống dòng
+          </span>
+          <span className="text-[11px] text-muted-foreground sm:hidden">
+            {textInput.length} ký tự
+          </span>
+
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => void handleSendText()}
+            disabled={!textInput.trim() || isEvaluating || submitAnswer.isPending || isSubmittingVoice}
+            className="h-8 px-4 text-xs gap-1.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-xs shrink-0"
+          >
+            {isEvaluating || submitAnswer.isPending || isSubmittingVoice ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" />
+                <span>Đang gửi...</span>
+              </>
+            ) : (
+              <>
+                <Send className="size-3.5" />
+                <span>Gửi trả lời</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     )
   }

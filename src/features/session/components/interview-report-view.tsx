@@ -293,10 +293,14 @@ export default function InterviewReportView({
                 <Badge variant="outline" className="text-xs font-medium">
                   {getConfidenceLabel(report.confidence)}
                 </Badge>
+                <Badge variant="outline" className="text-xs font-medium border-primary/20 text-primary bg-primary/5">
+                  {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+                </Badge>
               </div>
               <p className="text-xs text-muted-foreground line-clamp-1">
                 Vị trí: <strong className="text-foreground">{session.jobDescription.title}</strong>
                 {session.profile?.headline ? ` • Ứng viên: ${session.profile.headline}` : ''}
+                {` • Hình thức: ${session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}`}
                 {report.completedAt ? ` • Hoàn thành: ${new Date(report.completedAt).toLocaleString('vi-VN')}` : ''}
               </p>
             </div>

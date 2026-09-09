@@ -81,7 +81,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
           <div>
             <p className="text-muted-foreground">Trạng thái</p>
             <Badge
@@ -99,6 +99,12 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
           <div>
             <p className="text-muted-foreground">JD</p>
             <p className="font-medium">{session.jobDescription.title}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Hình thức</p>
+            <p className="font-medium">
+              {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+            </p>
           </div>
           <div>
             <p className="text-muted-foreground">Độ khó</p>

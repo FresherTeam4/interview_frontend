@@ -112,7 +112,7 @@ export default function JdForm({ jd }: JdFormProps) {
             onChange={(e) => setConfirmedText(e.target.value)}
             disabled={isReady || isBusy}
             rows={16}
-            className="font-mono text-sm"
+            className="font-mono text-sm max-h-[380px] overflow-y-auto resize-y"
             placeholder="Dán nội dung mô tả công việc vào đây..."
           />
         </div>

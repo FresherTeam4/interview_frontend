@@ -208,15 +208,27 @@ export default function StepJdOrTemplate({
               />
             </div>
           ) : (
-            <div>
+            <div className="space-y-1">
               <Textarea
                 placeholder="Dán toàn bộ nội dung tuyển dụng (Mô tả công việc, Yêu cầu kỹ năng, Kinh nghiệm...)"
                 rows={7}
                 value={jdText}
                 onChange={(e) => setJdText(e.target.value)}
                 disabled={isProcessing}
-                className="text-xs"
+                className="min-h-[140px] max-h-[260px] overflow-y-auto resize-y text-xs font-sans leading-relaxed"
               />
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
+                <span>{jdText.length > 0 ? `${jdText.length.toLocaleString('vi-VN')} ký tự` : 'Chưa nhập nội dung'}</span>
+                {jdText.length > 0 && !isProcessing && (
+                  <button
+                    type="button"
+                    onClick={() => setJdText('')}
+                    className="text-muted-foreground hover:text-destructive transition-colors text-[11px]"
+                  >
+                    Xóa nội dung
+                  </button>
+                )}
+              </div>
             </div>
           )}
 

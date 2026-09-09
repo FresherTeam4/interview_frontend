@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, Play } from 'lucide-react'
+import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, MessageSquareText, Mic, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import type { InterviewTemplate } from '@/types/template'
 import type { ProfileSummary } from '@/types/profile'
 import type { InterviewSessionOptions } from '@/types/template'
+import type { SessionMode } from '@/types/session'
 
 interface StepConfigProps {
   template: InterviewTemplate
@@ -19,11 +20,13 @@ interface StepConfigProps {
     languageCode: string
     durationMinutes: number
     interviewerStyle: string
+    mode: SessionMode
   }
   onChangeConfig: (updates: Partial<{
     languageCode: string
     durationMinutes: number
     interviewerStyle: string
+    mode: SessionMode
   }>) => void
   onSubmit: () => void
   onBack: () => void
@@ -94,6 +97,55 @@ export default function StepConfig({
 
           {/* Session Settings */}
           <div className="pt-4 border-t border-border/70 space-y-5">
+            {/* Interview Mode */}
+            <div>
+              <label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
+                <Mic className="size-3.5 text-primary" />
+                Hình thức phỏng vấn
+              </label>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div
+                  onClick={() => onChangeConfig({ mode: 'VOICE_TURN_BASED' })}
+                  className={cn(
+                    'cursor-pointer p-3 rounded-lg border text-left transition-all space-y-1.5',
+                    config.mode === 'VOICE_TURN_BASED'
+                      ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
+                      : 'border-border/80 bg-card/60 hover:border-primary/40',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Mic className="size-3.5" />
+                    </div>
+                    <span className="font-semibold text-xs text-foreground">Giọng nói (Voice)</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    AI tự động đọc câu hỏi, ứng viên bấm micro để nói (hỗ trợ chuyển đổi giọng nói sang văn bản).
+                  </p>
+                </div>
+
+                <div
+                  onClick={() => onChangeConfig({ mode: 'TEXT' })}
+                  className={cn(
+                    'cursor-pointer p-3 rounded-lg border text-left transition-all space-y-1.5',
+                    config.mode === 'TEXT'
+                      ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
+                      : 'border-border/80 bg-card/60 hover:border-primary/40',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="size-6 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0">
+                      <MessageSquareText className="size-3.5" />
+                    </div>
+                    <span className="font-semibold text-xs text-foreground">Văn bản thuần túy (Chat)</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Gõ câu trả lời trực tiếp trong khung chat. Không dùng micro, không thu âm, không tự động phát âm thanh.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Language */}
             <div>
               <label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-2">
@@ -206,7 +258,7 @@ export default function StepConfig({
               {template.title} ({template.targetSeniority || 'JUNIOR'})
             </div>
             <div className="text-muted-foreground text-[11px]">
-              {config.durationMinutes} phút · {config.languageCode === 'vi' ? 'Tiếng Việt' : 'English'} · Phong cách {config.interviewerStyle}
+              {config.durationMinutes} phút · {config.mode === 'TEXT' ? 'Văn bản thuần túy' : 'Giọng nói'} · {config.languageCode === 'vi' ? 'Tiếng Việt' : 'English'}
             </div>
           </div>
         </div>

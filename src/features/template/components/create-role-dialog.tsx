@@ -157,8 +157,8 @@ export default function CreateRoleDialog({ trigger, onSuccess }: CreateRoleDialo
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[540px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-3 border-b shrink-0">
           <DialogTitle>Tạo vị trí phỏng vấn mới</DialogTitle>
           <DialogDescription>
             Tải lên bản mô tả công việc (JD) dạng PDF hoặc dán văn bản để AI tự động thiết lập khung tiêu chí phỏng vấn.
@@ -166,7 +166,7 @@ export default function CreateRoleDialog({ trigger, onSuccess }: CreateRoleDialo
         </DialogHeader>
 
         {createdTemplateId ? (
-          <div className="flex flex-col items-center gap-4 py-6 text-center">
+          <div className="flex flex-col items-center gap-4 p-6 py-8 text-center overflow-y-auto">
             <div className="size-14 rounded-full bg-success/15 text-success flex items-center justify-center">
               <CheckCircle2 className="size-8" />
             </div>
@@ -181,103 +181,118 @@ export default function CreateRoleDialog({ trigger, onSuccess }: CreateRoleDialo
             </Button>
           </div>
         ) : (
-          <div className="space-y-4 py-2">
-            <div>
-              <label htmlFor="roleTitle" className="block text-xs font-semibold mb-1.5 text-foreground">
-                Tiêu đề vị trí {mode === 'text' ? <span className="text-destructive">*</span> : <span className="text-muted-foreground font-normal text-[11px]">(tự động trích xuất nếu để trống)</span>}
-              </label>
-              <Input
-                id="roleTitle"
-                placeholder={mode === 'file' ? 'Để trống để AI tự trích xuất, hoặc nhập tên gợi nhớ...' : 'Ví dụ: Backend Golang Engineer, React Frontend...'}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Mode switch */}
-            <div className="flex items-center gap-4 text-xs pt-1">
-              <button
-                type="button"
-                onClick={() => setMode('file')}
-                className={`font-semibold pb-1 border-b-2 transition-colors flex items-center gap-1.5 ${
-                  mode === 'file'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <FileUp className="size-3.5" />
-                Tải file PDF
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('text')}
-                className={`font-semibold pb-1 border-b-2 transition-colors flex items-center gap-1.5 ${
-                  mode === 'text'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <FileText className="size-3.5" />
-                Dán văn bản JD
-              </button>
-            </div>
-
-            {mode === 'file' ? (
-              <div className="border border-dashed border-input rounded-lg p-6 text-center space-y-2 hover:border-primary/60 transition-colors bg-muted/10">
-                <FileText className="size-8 mx-auto text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium">
-                    {file ? file.name : 'Kéo thả hoặc bấm để chọn file PDF của JD'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Định dạng PDF, tối đa 10MB</p>
-                </div>
-                <Input
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => {
-                    const selected = e.target.files?.[0]
-                    if (selected) {
-                      setFile(selected)
-                      if (!title) {
-                        setTitle(selected.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '))
-                      }
-                    }
-                  }}
-                  className="max-w-xs mx-auto text-xs"
-                  disabled={isSubmitting}
-                />
-              </div>
-            ) : (
+          <>
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
               <div>
-                <Textarea
-                  placeholder="Dán nội dung tuyển dụng: Mô tả công việc, Yêu cầu kỹ năng, Trách nhiệm..."
-                  rows={6}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
+                <label htmlFor="roleTitle" className="block text-xs font-semibold mb-1.5 text-foreground">
+                  Tiêu đề vị trí {mode === 'text' ? <span className="text-destructive">*</span> : <span className="text-muted-foreground font-normal text-[11px]">(tự động trích xuất nếu để trống)</span>}
+                </label>
+                <Input
+                  id="roleTitle"
+                  placeholder={mode === 'file' ? 'Để trống để AI tự trích xuất, hoặc nhập tên gợi nhớ...' : 'Ví dụ: Backend Golang Engineer, React Frontend...'}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                   disabled={isSubmitting}
-                  className="text-xs"
                 />
               </div>
-            )}
 
-            {/* Progress Status */}
-            {isSubmitting && (
-              <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg text-primary text-xs font-medium">
-                <Spinner className="size-4 shrink-0" />
-                <span>{statusMessage}</span>
+              {/* Mode switch */}
+              <div className="flex items-center gap-4 text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => setMode('file')}
+                  className={`font-semibold pb-1 border-b-2 transition-colors flex items-center gap-1.5 ${
+                    mode === 'file'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <FileUp className="size-3.5" />
+                  Tải file PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('text')}
+                  className={`font-semibold pb-1 border-b-2 transition-colors flex items-center gap-1.5 ${
+                    mode === 'text'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <FileText className="size-3.5" />
+                  Dán văn bản JD
+                </button>
               </div>
-            )}
 
-            {/* Error Message */}
-            {errorMessage && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-xs">
-                <AlertCircle className="size-4 shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
+              {mode === 'file' ? (
+                <div className="border border-dashed border-input rounded-lg p-6 text-center space-y-2 hover:border-primary/60 transition-colors bg-muted/10">
+                  <FileText className="size-8 mx-auto text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {file ? file.name : 'Kéo thả hoặc bấm để chọn file PDF của JD'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Định dạng PDF, tối đa 10MB</p>
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const selected = e.target.files?.[0]
+                      if (selected) {
+                        setFile(selected)
+                        if (!title) {
+                          setTitle(selected.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '))
+                        }
+                      }
+                    }}
+                    className="max-w-xs mx-auto text-xs"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <Textarea
+                    placeholder="Dán nội dung tuyển dụng: Mô tả công việc, Yêu cầu kỹ năng, Trách nhiệm..."
+                    rows={6}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    disabled={isSubmitting}
+                    className="min-h-[140px] max-h-[260px] overflow-y-auto resize-y text-xs font-sans leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
+                    <span>{text.length > 0 ? `${text.length.toLocaleString('vi-VN')} ký tự` : 'Chưa nhập nội dung'}</span>
+                    {text.length > 0 && !isSubmitting && (
+                      <button
+                        type="button"
+                        onClick={() => setText('')}
+                        className="text-muted-foreground hover:text-destructive transition-colors text-[11px]"
+                      >
+                        Xóa nội dung
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
-            <div className="flex justify-end gap-2 pt-2">
+              {/* Progress Status */}
+              {isSubmitting && (
+                <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/20 rounded-lg text-primary text-xs font-medium">
+                  <Spinner className="size-4 shrink-0" />
+                  <span>{statusMessage}</span>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-xs">
+                  <AlertCircle className="size-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Pinned Bottom Footer */}
+            <div className="p-4 px-6 border-t bg-muted/20 flex justify-end gap-2 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -305,7 +320,7 @@ export default function CreateRoleDialog({ trigger, onSuccess }: CreateRoleDialo
                 )}
               </Button>
             </div>
-          </div>
+          </>
         )}
       </DialogContent>
     </Dialog>

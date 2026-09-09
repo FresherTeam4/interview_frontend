@@ -62,6 +62,13 @@ export default function SessionCompleteDialog({
 
         <div className="flex flex-col gap-3 py-2 text-sm">
           <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-xs">
+            <span className="text-muted-foreground">Hình thức phỏng vấn:</span>
+            <span className="font-semibold text-foreground">
+              {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-xs">
             <span className="text-muted-foreground">Số lượt đối thoại đã thực hiện:</span>
             <span className="font-semibold text-foreground">
               {turnCount} lượt trao đổi trực tiếp

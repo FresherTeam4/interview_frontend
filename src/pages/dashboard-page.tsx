@@ -150,6 +150,12 @@ export default function DashboardPage() {
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {SESSION_STATUS_LABEL[session.status]}
                         </Badge>
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] shrink-0 font-normal border border-primary/20 text-primary bg-primary/5"
+                        >
+                          {session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}
+                        </Badge>
                         {isCompleted && session.overallScore !== null && (
                           <Badge
                             variant="secondary"
@@ -161,6 +167,7 @@ export default function DashboardPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {session.profileHeadline || 'Hồ sơ'} ·{' '}
+                        {session.mode === 'TEXT' ? 'Phỏng vấn Văn bản' : 'Phỏng vấn Giọng nói'} ·{' '}
                         {session.durationMinutes ? `${session.durationMinutes} phút` : '30 phút'} ·{' '}
                         {new Date(session.lastActivityAt || session.createdAt).toLocaleDateString('vi-VN')}
                       </p>

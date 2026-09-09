@@ -13,6 +13,7 @@ import { saveCreatedSession } from '@/features/session/services/session-mock-ser
 import { sessionDetailPath } from '@/constants/routes'
 import { cn } from '@/lib/utils'
 import type { InterviewTemplate, InterviewSessionOptions } from '@/types/template'
+import type { SessionMode } from '@/types/session'
 
 const STEPS = [
   { step: 1, title: 'Vị trí phỏng vấn', icon: Briefcase },
@@ -44,10 +45,16 @@ export default function CreateInterviewWizard({
     interviewerStyles: [],
   })
 
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<{
+    languageCode: string
+    durationMinutes: number
+    interviewerStyle: string
+    mode: SessionMode
+  }>({
     languageCode: 'vi',
     durationMinutes: 30,
     interviewerStyle: 'FRIENDLY',
+    mode: 'VOICE_TURN_BASED',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -144,6 +151,7 @@ export default function CreateInterviewWizard({
         profileHeadline: activeProfile?.headline || selectedTemplate.title,
         title: selectedTemplate.title,
         durationMinutes: config.durationMinutes,
+        mode: config.mode,
       })
 
       toast.info('Đã tạo phiên phỏng vấn. AI đang thiết lập kịch bản và câu hỏi...')

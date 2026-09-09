@@ -131,12 +131,15 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
     awaitingAction,
   })
 
+  const storedSession = getStoredSessions().find((s) => s.id === sessionId)
+  const sessionMode = storedSession?.mode || 'VOICE_TURN_BASED'
+
   return {
     id: sessionId,
     profile: { id: 1, headline },
     jobDescription: { id: 1, title },
     difficulty: 'MEDIUM',
-    mode: 'TEXT',
+    mode: sessionMode,
     languageCode: 'vi',
     durationMinutes,
     deadlineAt: conv.deadlineAt,

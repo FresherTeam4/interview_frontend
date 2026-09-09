@@ -40,25 +40,33 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
               {session.profileHeadline ?? `Hồ sơ #${session.profileId}`}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <Badge
-              variant={
-                isCompleted
-                  ? 'default'
-                  : isReady
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <Badge
+                variant="outline"
+                className="text-[10px] font-normal shrink-0 border-primary/25 text-primary bg-primary/5"
+              >
+                {session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}
+              </Badge>
+              <Badge
+                variant={
+                  isCompleted
                     ? 'default'
-                    : isInProgress
-                      ? 'secondary'
-                      : isScoring
-                        ? 'outline'
-                        : session.status === 'FAILED'
-                          ? 'destructive'
-                          : 'outline'
-              }
-              className="text-[11px] shrink-0 font-medium"
-            >
-              {SESSION_STATUS_LABEL[session.status]}
-            </Badge>
+                    : isReady
+                      ? 'default'
+                      : isInProgress
+                        ? 'secondary'
+                        : isScoring
+                          ? 'outline'
+                          : session.status === 'FAILED'
+                            ? 'destructive'
+                            : 'outline'
+                }
+                className="text-[11px] shrink-0 font-medium"
+              >
+                {SESSION_STATUS_LABEL[session.status]}
+              </Badge>
+            </div>
             {isCompleted &&
               (session.overallScore !== null ? (
                 <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30 bg-primary/5">
@@ -91,15 +99,9 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
             </strong>
           </div>
           <div className="truncate">
-            <span>Tương tác: </span>
+            <span>Hình thức: </span>
             <strong className="text-foreground font-medium">
-              {isReady
-                ? 'Sẵn sàng bắt đầu'
-                : isCompleted
-                  ? 'Đã hoàn tất'
-                  : isScoring
-                    ? 'Đang chấm điểm'
-                    : 'Đang đối thoại'}
+              {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
             </strong>
           </div>
           <div className="truncate">

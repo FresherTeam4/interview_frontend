@@ -126,7 +126,7 @@ export default function InterviewRoomHeader({
         <div className="flex items-center gap-2 shrink-0">
           {!isFinished && (session.status === 'IN_PROGRESS' || isPaused) ? (
             <>
-              {onToggleAutoPlayAudio ? (
+              {session.mode !== 'TEXT' && onToggleAutoPlayAudio ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -212,6 +212,9 @@ export default function InterviewRoomHeader({
         <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
           <Badge variant="outline" className="text-[11px] font-normal py-0 h-5">
             Độ khó: <strong className="ml-1 font-semibold text-foreground">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</strong>
+          </Badge>
+          <Badge variant="outline" className="text-[11px] font-normal py-0 h-5">
+            Hình thức: <strong className="ml-1 font-semibold text-foreground">{session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}</strong>
           </Badge>
           <span className="flex items-center gap-1 font-medium text-foreground ml-1">
             <MessageSquare className="size-3.5 text-primary" />

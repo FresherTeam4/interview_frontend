@@ -3,7 +3,7 @@ import { Bot, Loader2, Square, User, Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTurnAudioPlayer } from '@/hooks/use-turn-audio-player'
 import { cn } from '@/lib/utils'
-import type { Turn } from '@/types/session'
+import type { SessionMode, Turn } from '@/types/session'
 
 interface InterviewChatViewProps {
   sessionId: number
@@ -11,6 +11,8 @@ interface InterviewChatViewProps {
   isEvaluating: boolean
   statusMessage?: string | null
   autoPlayLatest?: boolean
+  sessionMode?: SessionMode
+  onAudioPlaybackChange?: (isPlaying: boolean) => void
 }
 
 export default function InterviewChatView({
@@ -19,10 +21,18 @@ export default function InterviewChatView({
   isEvaluating,
   statusMessage,
   autoPlayLatest = false,
+  sessionMode,
+  onAudioPlaybackChange,
 }: InterviewChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const playedTurnIdsRef = useRef<Set<number>>(new Set())
   const { playingTurnId, loadingTurnId, playTurn, stopAudio } = useTurnAudioPlayer(sessionId)
+
+  // Notify parent component when audio playback status changes
+  useEffect(() => {
+    const isPlaying = playingTurnId !== null || loadingTurnId !== null
+    onAudioPlaybackChange?.(isPlaying)
+  }, [playingTurnId, loadingTurnId, onAudioPlaybackChange])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,7 +47,7 @@ export default function InterviewChatView({
 
   // Directly auto-play the newest interviewer question as soon as it arrives
   useEffect(() => {
-    if (!autoPlayLatest || isEvaluating) return
+    if (!autoPlayLatest || isEvaluating || sessionMode === 'TEXT') return
 
     const interviewerTurns = turns.filter((t) => t.role === 'INTERVIEWER' && t.id)
     if (interviewerTurns.length === 0) return
@@ -48,7 +58,7 @@ export default function InterviewChatView({
       playedTurnIdsRef.current.add(latestTurn.id)
       void playTurn(latestTurn.id)
     }
-  }, [turns, autoPlayLatest, isEvaluating, playTurn])
+  }, [turns, autoPlayLatest, isEvaluating, sessionMode, playTurn])
 
   return (
     <div className="flex flex-col gap-4 py-2">
@@ -95,7 +105,7 @@ export default function InterviewChatView({
                   })}
                 </span>
 
-                {isInterviewer && turn.id ? (
+                {isInterviewer && turn.id && sessionMode !== 'TEXT' ? (
                   <Button
                     type="button"
                     variant="ghost"
