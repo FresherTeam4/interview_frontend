@@ -47,10 +47,10 @@ function getPerformanceTier(score?: number | null): {
 } {
   if (score === null || score === undefined) {
     return {
-      label: 'Chưa đủ dữ liệu',
-      color: 'text-muted-foreground',
-      bg: 'bg-muted/40',
-      border: 'border-muted',
+      label: 'Chưa đủ điều kiện',
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-500/10 dark:bg-amber-500/15',
+      border: 'border-amber-500/40',
     }
   }
   if (score >= 85) {
@@ -394,10 +394,25 @@ export default function InterviewReportView({
         </CardContent>
       </Card>
 
+      {/* Insufficient Evaluation Notice Banner */}
+      {overallScore === null && (
+        <div className="flex items-start sm:items-center gap-3 p-3.5 sm:p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
+          <AlertCircle className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+          <div className="space-y-0.5">
+            <p className="font-semibold text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+              Phiên phỏng vấn chưa đủ điều kiện tính điểm tổng quan
+            </p>
+            <p className="text-xs text-amber-700/90 dark:text-amber-400/90">
+              Ứng viên kết thúc phiên sớm hoặc thời lượng trao đổi chưa đạt tối thiểu 50% độ bao phủ các chủ đề chuyên môn theo yêu cầu JD.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 2. Key Metrics Grid (4 Core Scorecards) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {/* Overall Score */}
-        <Card className="shadow-2xs border">
+        <Card className={cn('shadow-2xs border transition-colors', overallScore === null && 'border-amber-500/30 bg-amber-500/[0.03]')}>
           <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
               <span className="flex items-center gap-1.5">
@@ -409,12 +424,12 @@ export default function InterviewReportView({
               </Badge>
             </div>
             <div className="flex items-baseline gap-1 my-1">
-              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', overallScore !== null ? overallTier.color : 'text-foreground')}>
+              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', overallTier.color)}>
                 {overallScore !== null ? overallScore : '--'}
               </span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-tight">
+            <p className={cn('text-[11px] leading-tight', overallScore !== null ? 'text-muted-foreground' : 'text-amber-600/90 dark:text-amber-400/90 font-medium')}>
               {overallScore !== null
                 ? '80% Chuyên môn + 20% Giao tiếp'
                 : 'Chưa đủ 50% độ bao phủ để kết luận điểm tổng'}
@@ -423,7 +438,7 @@ export default function InterviewReportView({
         </Card>
 
         {/* Technical Score */}
-        <Card className="shadow-2xs border">
+        <Card className={cn('shadow-2xs border transition-colors', technicalScore === null && 'border-amber-500/30 bg-amber-500/[0.03]')}>
           <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
               <span className="flex items-center gap-1.5">
@@ -435,19 +450,21 @@ export default function InterviewReportView({
               </Badge>
             </div>
             <div className="flex items-baseline gap-1 my-1">
-              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', technicalScore !== null ? technicalTier.color : 'text-foreground')}>
+              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', technicalTier.color)}>
                 {technicalScore !== null ? technicalScore : '--'}
               </span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-tight">
-              Trung bình trọng số các lĩnh vực kỹ thuật JD
+            <p className={cn('text-[11px] leading-tight', technicalScore !== null ? 'text-muted-foreground' : 'text-amber-600/90 dark:text-amber-400/90 font-medium')}>
+              {technicalScore !== null
+                ? 'Trung bình trọng số các lĩnh vực kỹ thuật JD'
+                : 'Chưa đủ dẫn chứng kỹ thuật'}
             </p>
           </CardContent>
         </Card>
 
         {/* Communication Score */}
-        <Card className="shadow-2xs border">
+        <Card className={cn('shadow-2xs border transition-colors', communicationScore === null && 'border-amber-500/30 bg-amber-500/[0.03]')}>
           <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
               <span className="flex items-center gap-1.5">
@@ -459,13 +476,15 @@ export default function InterviewReportView({
               </Badge>
             </div>
             <div className="flex items-baseline gap-1 my-1">
-              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', communicationScore !== null ? communicationTier.color : 'text-foreground')}>
+              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', communicationTier.color)}>
                 {communicationScore !== null ? communicationScore : '--'}
               </span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-tight">
-              Cấu trúc câu trả lời & phản xạ tương tác
+            <p className={cn('text-[11px] leading-tight', communicationScore !== null ? 'text-muted-foreground' : 'text-amber-600/90 dark:text-amber-400/90 font-medium')}>
+              {communicationScore !== null
+                ? 'Cấu trúc câu trả lời & phản xạ tương tác'
+                : 'Chưa đủ tương tác đối thoại'}
             </p>
           </CardContent>
         </Card>
