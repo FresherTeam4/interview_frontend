@@ -67,20 +67,22 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
                 {SESSION_STATUS_LABEL[session.status]}
               </Badge>
             </div>
-            {isCompleted &&
-              (session.overallScore !== null ? (
-                <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30 bg-primary/5">
-                  {session.overallScore}/100 điểm
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5"
-                  title="Chưa đủ độ bao phủ tiêu chí (dưới 50%) để kết luận điểm"
-                >
-                  Chưa đủ dữ liệu điểm
-                </Badge>
-              ))}
+            {session.overallScore !== null ? (
+              <Badge
+                variant="outline"
+                className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15"
+              >
+                {session.overallScore}/100 điểm
+              </Badge>
+            ) : isCompleted ? (
+              <Badge
+                variant="outline"
+                className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5"
+                title="Chưa đủ độ bao phủ tiêu chí (dưới 50%) để kết luận điểm"
+              >
+                Chưa đủ dữ liệu điểm
+              </Badge>
+            ) : null}
           </div>
         </div>
       </CardHeader>

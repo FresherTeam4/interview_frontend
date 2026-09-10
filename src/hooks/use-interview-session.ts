@@ -138,7 +138,12 @@ export function useSubmitTextAnswer(sessionId: number) {
       queryClient.setQueryData<InterviewSession>(QUERY_KEYS.session(sessionId), (prev) => {
         if (!prev) return prev
 
-        const newTurns = prev.turns.filter((t) => t.id < 1000000000000 || t.role !== 'CANDIDATE')
+        const newTurns = prev.turns.filter(
+          (t) =>
+            t.id < 1000000000000 &&
+            (!result.candidateTurn || t.id !== result.candidateTurn.id) &&
+            (!result.interviewerTurn || t.id !== result.interviewerTurn.id),
+        )
         if (result.candidateTurn) {
           newTurns.push(result.candidateTurn)
         }
@@ -197,13 +202,13 @@ export function useSessionReport(sessionId: number, enabled: boolean = true) {
     enabled: Number.isInteger(sessionId) && sessionId > 0 && enabled,
     refetchInterval: (query) => {
       const data = query.state.data
-      // Poll every 2s while backend scoring worker is still running
+      // Poll every 2.5s while backend scoring worker is still running
       if (data?.status === 'SCORING') {
-        return 2000
+        return 2500
       }
       return false
     },
-    staleTime: 0,
+    staleTime: 5000,
   })
 }
 

@@ -1,11 +1,8 @@
 import {
   AlertCircle,
-  AlertTriangle,
   ArrowRight,
   Award,
-  CheckCircle2,
   Code2,
-  Compass,
   FileText,
   History,
   Layers,
@@ -13,6 +10,7 @@ import {
   MessageSquare,
   Play,
   RefreshCw,
+  Sparkles,
   Target,
   TrendingUp,
   UserCheck,
@@ -27,12 +25,11 @@ import { getErrorMessage } from '@/api/api-error'
 import { useRetryScoring, useSessionReport } from '@/hooks/use-interview-session'
 import { ROUTES } from '@/constants/routes'
 import type {
-  ActionPlanItem,
   FocusAreaResult,
+  ImprovementItem,
   InterviewAssessmentConfidence,
   InterviewEvidenceStatus,
   InterviewFocusPriority,
-  ReportItem,
 } from '@/types/report'
 import type { InterviewSession } from '@/types/session'
 import { cn } from '@/lib/utils'
@@ -42,13 +39,13 @@ interface InterviewReportViewProps {
   onViewConversation?: () => void
 }
 
-function getPerformanceTier(score: number | null): {
+function getPerformanceTier(score?: number | null): {
   label: string
   color: string
   bg: string
   border: string
 } {
-  if (score === null) {
+  if (score === null || score === undefined) {
     return {
       label: 'Chưa đủ dữ liệu',
       color: 'text-muted-foreground',
@@ -59,69 +56,112 @@ function getPerformanceTier(score: number | null): {
   if (score >= 85) {
     return {
       label: 'Xuất sắc',
-      color: 'text-emerald-500',
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/30',
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+      border: 'border-emerald-500/40',
     }
   }
   if (score >= 70) {
     return {
       label: 'Tốt / Đạt chuẩn',
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-      border: 'border-primary/30',
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+      border: 'border-emerald-500/40',
     }
   }
   if (score >= 50) {
     return {
       label: 'Đạt yêu cầu',
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
+      color: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-500/10 dark:bg-amber-500/15',
       border: 'border-amber-500/30',
     }
   }
   return {
     label: 'Cần cải thiện',
     color: 'text-destructive',
-    bg: 'bg-destructive/10',
+    bg: 'bg-destructive/10 dark:bg-destructive/15',
     border: 'border-destructive/30',
   }
 }
 
-function getConfidenceLabel(confidence: InterviewAssessmentConfidence | null): string {
+function getConfidenceBadge(confidence?: InterviewAssessmentConfidence | null): {
+  label: string
+  className: string
+} {
   switch (confidence) {
     case 'HIGH':
-      return 'Độ tin cậy cao'
+      return {
+        label: 'Độ tin cậy cao',
+        className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+      }
     case 'MEDIUM':
-      return 'Độ tin cậy vừa'
+      return {
+        label: 'Độ tin cậy vừa',
+        className: 'border-primary/30 bg-primary/10 text-primary',
+      }
     case 'LOW':
-      return 'Độ tin cậy thấp'
+      return {
+        label: 'Độ tin cậy thấp',
+        className: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+      }
     default:
-      return 'Chưa xác định'
+      return {
+        label: 'Chưa xác định',
+        className: 'border-muted bg-muted/40 text-muted-foreground',
+      }
   }
 }
 
-function getEvidenceStatusBadge(status: InterviewEvidenceStatus): { label: string; variant: 'default' | 'secondary' | 'outline' } {
+function getEvidenceStatusBadge(status: InterviewEvidenceStatus): {
+  label: string
+  variant: 'default' | 'secondary' | 'outline'
+  className?: string
+} {
   switch (status) {
     case 'SUFFICIENT':
-      return { label: 'Đầy đủ dẫn chứng', variant: 'default' }
+      return {
+        label: 'Đầy đủ dẫn chứng',
+        variant: 'default',
+        className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+      }
     case 'PARTIAL':
-      return { label: 'Một phần dẫn chứng', variant: 'secondary' }
+      return {
+        label: 'Dẫn chứng một phần',
+        variant: 'secondary',
+        className: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+      }
     case 'NOT_EXPLORED':
     default:
-      return { label: 'Chưa khảo sát', variant: 'outline' }
+      return {
+        label: 'Chưa khảo sát',
+        variant: 'outline',
+        className: 'text-muted-foreground border-dashed',
+      }
   }
 }
 
-function getPriorityBadge(priority: InterviewFocusPriority): { label: string; className: string } {
+function getPriorityBadge(priority: InterviewFocusPriority): {
+  label: string
+  className: string
+} {
   switch (priority) {
     case 'HIGH':
-      return { label: 'Trọng tâm cao', className: 'border-destructive/30 bg-destructive/10 text-destructive' }
+      return {
+        label: 'Trọng tâm cao',
+        className: 'border-destructive/30 bg-destructive/10 text-destructive font-medium',
+      }
     case 'MEDIUM':
-      return { label: 'Trọng tâm trung bình', className: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400' }
+      return {
+        label: 'Trọng tâm vừa',
+        className: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium',
+      }
     case 'LOW':
     default:
-      return { label: 'Bổ trợ', className: 'border-muted bg-muted/40 text-muted-foreground' }
+      return {
+        label: 'Bổ trợ',
+        className: 'border-muted bg-muted/40 text-muted-foreground font-normal',
+      }
   }
 }
 
@@ -133,9 +173,9 @@ export default function InterviewReportView({
   const retryScoringMutation = useRetryScoring(session.id)
 
   const report = reportQuery.data
-  const isPending = reportQuery.isPending
-  const isFailed = report?.status === 'SCORING_FAILED' || session.status === 'SCORING_FAILED'
-  const isScoring = !isFailed && (report?.status === 'SCORING' || session.status === 'SCORING')
+  const isPending = reportQuery.isPending && !report
+  const isFailed = report ? report.status === 'SCORING_FAILED' : session.status === 'SCORING_FAILED'
+  const isScoring = !isFailed && (report ? report.status === 'SCORING' : session.status === 'SCORING')
 
   async function handleRetryScoring() {
     try {
@@ -166,14 +206,14 @@ export default function InterviewReportView({
   if (isFailed) {
     return (
       <Card className="border-destructive/30 bg-destructive/5 shadow-xs">
-        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5">
-          <div className="flex items-start sm:items-center gap-3 min-w-0">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-destructive/15 text-destructive">
-              <AlertCircle className="size-5" />
+        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 sm:p-6">
+          <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-destructive/15 text-destructive">
+              <AlertCircle className="size-6" />
             </div>
             <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-foreground">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-semibold text-foreground">
                   Quá trình chấm điểm gặp sự cố
                 </h3>
                 {report?.scoringErrorCode && (
@@ -183,26 +223,29 @@ export default function InterviewReportView({
                 )}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                {report?.scoringErrorMessage || session.statusMessage || 'Mô hình AI bị quá thời gian xử lý khi phân tích nội dung phỏng vấn dài hoặc kết nối bị gián đoạn. Vui lòng thử lại.'}
+                {report?.scoringErrorMessage ||
+                  session.statusMessage ||
+                  'Mô hình AI bị quá thời gian xử lý khi phân tích nội dung phỏng vấn hoặc kết nối bị gián đoạn. Bạn có thể bấm Thử chấm điểm lại bên dưới.'}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
             <Button
+              variant="destructive"
               size="sm"
               onClick={() => void handleRetryScoring()}
               disabled={retryScoringMutation.isPending}
-              className="gap-1.5 text-xs font-medium shadow-xs"
+              className="gap-1.5 shadow-xs text-xs"
             >
               <RefreshCw className={cn('size-3.5', retryScoringMutation.isPending && 'animate-spin')} />
-              <span>Thử chấm điểm lại</span>
+              <span>{retryScoringMutation.isPending ? 'Đang gửi lại...' : 'Thử chấm điểm lại'}</span>
             </Button>
             {onViewConversation && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onViewConversation}
-                className="gap-1.5 text-xs font-medium"
+                className="gap-1.5 text-xs h-8"
               >
                 <MessageSquare className="size-3.5" />
                 <span>Xem đối thoại</span>
@@ -272,9 +315,37 @@ export default function InterviewReportView({
     return null
   }
 
-  const overallTier = getPerformanceTier(report.overallScore)
-  const technicalTier = getPerformanceTier(report.technicalScore)
-  const communicationTier = getPerformanceTier(report.communicationScore)
+  const rep = report.report
+  const overallScore = rep?.score ?? report.overallScore ?? null
+  const technicalScore = rep?.scores?.technical?.score ?? report.technicalScore ?? null
+  const technicalFeedback = rep?.scores?.technical?.feedback ?? null
+  const communicationScore = rep?.scores?.communication?.score ?? report.communicationScore ?? null
+  const communicationFeedback = rep?.scores?.communication?.feedback ?? report.communicationFeedback ?? null
+  const overallSummary = rep?.summary ?? report.overallSummary ?? null
+  const recommendations: ImprovementItem[] = rep?.recommendations
+    ? rep.recommendations.map((rec, idx) => ({ title: `Khuyến nghị #${idx + 1}`, summary: rec }))
+    : (report.improvements || [])
+
+  const overallTier = getPerformanceTier(overallScore)
+  const technicalTier = getPerformanceTier(technicalScore)
+  const communicationTier = getPerformanceTier(communicationScore)
+  const confidenceBadge = getConfidenceBadge(report.confidence)
+
+  const sortedFocusAreas: FocusAreaResult[] = (
+    report.focusAreas && report.focusAreas.length > 0
+      ? report.focusAreas
+      : (rep?.focusAreas || []).map((fa, index) => ({
+          focusAreaId: index + 1,
+          code: `FA-${index + 1}`,
+          name: fa.name,
+          priority: 'HIGH' as const,
+          displayOrder: index + 1,
+          score: fa.score,
+          confidence: 'MEDIUM' as const,
+          evidenceStatus: fa.score !== null ? ('SUFFICIENT' as const) : ('NOT_EXPLORED' as const),
+          summary: '',
+        }))
+  ).sort((a, b) => a.displayOrder - b.displayOrder)
 
   return (
     <div className="flex flex-col gap-6 w-full print:gap-4">
@@ -288,20 +359,21 @@ export default function InterviewReportView({
             <div className="min-w-0 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
-                  Báo cáo đánh giá năng lực phỏng vấn
+                  Báo cáo Đánh giá Năng lực Phỏng vấn
                 </h2>
-                <Badge variant="outline" className="text-xs font-medium">
-                  {getConfidenceLabel(report.confidence)}
-                </Badge>
-                <Badge variant="outline" className="text-xs font-medium border-primary/20 text-primary bg-primary/5">
+                {report.confidence && (
+                  <Badge variant="outline" className={cn('text-[11px] font-medium py-0 h-5', confidenceBadge.className)}>
+                    {confidenceBadge.label}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-[11px] font-medium py-0 h-5 border-primary/25 text-primary bg-primary/5">
                   {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground line-clamp-1">
                 Vị trí: <strong className="text-foreground">{session.jobDescription.title}</strong>
                 {session.profile?.headline ? ` • Ứng viên: ${session.profile.headline}` : ''}
-                {` • Hình thức: ${session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}`}
-                {report.completedAt ? ` • Hoàn thành: ${new Date(report.completedAt).toLocaleString('vi-VN')}` : ''}
+                {report.completedAt ? ` • Hoàn tất: ${new Date(report.completedAt).toLocaleString('vi-VN')}` : ''}
               </p>
             </div>
           </div>
@@ -312,7 +384,7 @@ export default function InterviewReportView({
                 variant="outline"
                 size="sm"
                 onClick={onViewConversation}
-                className="gap-1.5 text-xs h-8"
+                className="gap-1.5 text-xs h-8 shadow-xs"
               >
                 <MessageSquare className="size-3.5" />
                 <span>Xem đối thoại</span>
@@ -322,7 +394,7 @@ export default function InterviewReportView({
         </CardContent>
       </Card>
 
-      {/* 2. Key Metrics Grid */}
+      {/* 2. Key Metrics Grid (4 Core Scorecards) */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {/* Overall Score */}
         <Card className="shadow-2xs border">
@@ -337,13 +409,15 @@ export default function InterviewReportView({
               </Badge>
             </div>
             <div className="flex items-baseline gap-1 my-1">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
-                {report.overallScore !== null ? report.overallScore : '--'}
+              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', overallScore !== null ? overallTier.color : 'text-foreground')}>
+                {overallScore !== null ? overallScore : '--'}
               </span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              {report.overallScore !== null ? 'Điểm trung bình trọng số toàn diện' : 'Chưa đủ độ bao phủ để kết luận điểm'}
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              {overallScore !== null
+                ? '80% Chuyên môn + 20% Giao tiếp'
+                : 'Chưa đủ 50% độ bao phủ để kết luận điểm tổng'}
             </p>
           </CardContent>
         </Card>
@@ -361,13 +435,13 @@ export default function InterviewReportView({
               </Badge>
             </div>
             <div className="flex items-baseline gap-1 my-1">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
-                {report.technicalScore !== null ? report.technicalScore : '--'}
+              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', technicalScore !== null ? technicalTier.color : 'text-foreground')}>
+                {technicalScore !== null ? technicalScore : '--'}
               </span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Đánh giá theo các kỹ năng yêu cầu trong JD
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              Trung bình trọng số các lĩnh vực kỹ thuật JD
             </p>
           </CardContent>
         </Card>
@@ -385,24 +459,24 @@ export default function InterviewReportView({
               </Badge>
             </div>
             <div className="flex items-baseline gap-1 my-1">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-foreground font-mono">
-                {report.communicationScore !== null ? report.communicationScore : '--'}
+              <span className={cn('text-2xl sm:text-3xl font-black tracking-tight font-mono', communicationScore !== null ? communicationTier.color : 'text-foreground')}>
+                {communicationScore !== null ? communicationScore : '--'}
               </span>
               <span className="text-xs text-muted-foreground">/ 100</span>
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Cấu trúc câu trả lời & phản xạ kỹ thuật
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              Cấu trúc câu trả lời & phản xạ tương tác
             </p>
           </CardContent>
         </Card>
 
-        {/* Coverage Percentage */}
+        {/* Coverage or Evaluated Focus Areas */}
         <Card className="shadow-2xs border">
           <CardContent className="p-4 flex flex-col justify-between h-full gap-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
               <span className="flex items-center gap-1.5">
                 <Target className="size-3.5 text-primary" />
-                Độ bao phủ tiêu chí
+                {report.coveragePercentage != null ? 'Độ bao phủ' : 'Chủ đề đánh giá'}
               </span>
               <span className="text-[10px] font-mono text-muted-foreground">
                 {session.turns?.length || 0} lượt trao đổi
@@ -410,47 +484,139 @@ export default function InterviewReportView({
             </div>
             <div className="flex items-baseline gap-1 my-1">
               <span className="text-2xl sm:text-3xl font-black tracking-tight text-primary font-mono">
-                {report.coveragePercentage !== null ? `${report.coveragePercentage}%` : '--'}
+                {report.coveragePercentage != null ? `${report.coveragePercentage}%` : `${sortedFocusAreas.length}`}
               </span>
+              {report.coveragePercentage == null && (
+                <span className="text-xs text-muted-foreground ml-1">lĩnh vực</span>
+              )}
             </div>
-            <p className="text-[11px] text-muted-foreground">
-              Tỷ lệ các chủ đề cốt lõi đã được khảo sát
-            </p>
+            {report.coveragePercentage != null ? (
+              <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-primary h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, report.coveragePercentage))}%` }}
+                />
+              </div>
+            ) : (
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Các trọng tâm chuyên môn theo yêu cầu JD
+              </p>
+            )}
+            {report.coveragePercentage != null && (
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Tỷ lệ chủ đề trọng tâm trong JD đã được kiểm tra
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* 3. AI Executive Summaries */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex flex-col gap-4">
         {/* Overall AI Summary */}
-        <Card className="shadow-2xs border">
+        <Card className="shadow-2xs border bg-gradient-to-br from-card via-card to-primary/5">
           <CardHeader className="py-3 px-4 sm:px-5 border-b bg-muted/20">
             <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-2">
               <FileText className="size-4 text-primary" />
               <span>Đánh giá tổng quan từ AI</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-4 sm:p-5 text-xs sm:text-sm leading-relaxed text-foreground/90">
-            {report.overallSummary || 'Chưa có tóm tắt tổng quan.'}
+          <CardContent className="p-4 sm:p-5 text-xs sm:text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
+            {overallSummary || 'Chưa có tóm tắt tổng quan từ hệ thống.'}
           </CardContent>
         </Card>
 
-        {/* Communication & Behavioral Feedback */}
-        <Card className="shadow-2xs border">
-          <CardHeader className="py-3 px-4 sm:px-5 border-b bg-muted/20">
-            <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-2">
-              <UserCheck className="size-4 text-primary" />
-              <span>Nhận xét kỹ năng trình bày & giao tiếp</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 text-xs sm:text-sm leading-relaxed text-foreground/90">
-            {report.communicationFeedback || 'Chưa có nhận xét giao tiếp chi tiết.'}
-          </CardContent>
-        </Card>
+        {/* Detailed Technical & Communication Breakdown Cards */}
+        {(technicalFeedback || communicationFeedback) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Technical Feedback */}
+            {technicalFeedback && (
+              <Card className="shadow-2xs border">
+                <CardHeader className="py-3 px-4 sm:px-5 border-b bg-muted/20">
+                  <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Code2 className="size-4 text-primary" />
+                      <span>Nhận xét chuyên môn kỹ thuật</span>
+                    </span>
+                    {technicalScore !== null && (
+                      <Badge variant="outline" className={cn('text-[10px] font-semibold py-0', technicalTier.bg, technicalTier.color, technicalTier.border)}>
+                        {technicalScore} / 100
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 text-xs sm:text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
+                  {technicalFeedback}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Communication & Behavioral Feedback */}
+            {communicationFeedback && (
+              <Card className="shadow-2xs border">
+                <CardHeader className="py-3 px-4 sm:px-5 border-b bg-muted/20">
+                  <CardTitle className="text-xs sm:text-sm font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <UserCheck className="size-4 text-primary" />
+                      <span>Nhận xét kỹ năng trao đổi & giao tiếp</span>
+                    </span>
+                    {communicationScore !== null && (
+                      <Badge variant="outline" className={cn('text-[10px] font-semibold py-0', communicationTier.bg, communicationTier.color, communicationTier.border)}>
+                        {communicationScore} / 100
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-5 text-xs sm:text-sm leading-relaxed text-foreground/90 whitespace-pre-line">
+                  {communicationFeedback}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 4. Focus Areas Breakdown */}
-      {report.focusAreas && report.focusAreas.length > 0 && (
+      {/* 4. Top Key Improvements / Recommendations */}
+      {recommendations && recommendations.length > 0 && (
+        <Card className="shadow-2xs border">
+          <CardHeader className="py-3 px-4 sm:px-5 border-b bg-amber-500/5">
+            <CardTitle className="text-sm sm:text-base font-semibold flex items-center justify-between">
+              <span className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                <TrendingUp className="size-4.5" />
+                <span>Trọng tâm cần hoàn thiện & nâng cấp ({recommendations.length})</span>
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                Gợi ý ưu tiên từ AI
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+              {recommendations.map((item: ImprovementItem, idx: number) => (
+                <div
+                  key={idx}
+                  className="flex flex-col gap-2 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs shadow-2xs hover:border-amber-500/40 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-amber-950 font-bold text-xs shadow-2xs">
+                      #{idx + 1}
+                    </span>
+                    <h4 className="font-semibold text-sm text-foreground leading-snug line-clamp-2">
+                      {item.title}
+                    </h4>
+                  </div>
+                  <p className="text-muted-foreground leading-relaxed text-xs">
+                    {item.summary}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 5. Detailed Focus Areas Breakdown */}
+      {sortedFocusAreas.length > 0 && (
         <Card className="shadow-2xs border">
           <CardHeader className="py-3 px-4 sm:px-5 border-b bg-muted/20">
             <CardTitle className="text-sm sm:text-base font-semibold flex items-center justify-between">
@@ -459,24 +625,77 @@ export default function InterviewReportView({
                 <span>Đánh giá chi tiết theo từng lĩnh vực trọng tâm (Focus Areas)</span>
               </span>
               <span className="text-xs font-normal text-muted-foreground">
-                {report.focusAreas.length} lĩnh vực
+                {sortedFocusAreas.length} lĩnh vực
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-5 flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4">
-              {report.focusAreas.map((area: FocusAreaResult) => {
+              {sortedFocusAreas.map((area: FocusAreaResult) => {
+                const areaScoreTier = getPerformanceTier(area.score)
+                const hasDetailedData = Boolean(area.summary && area.summary.trim())
+
+                // Chế độ hiển thị cho schema mới gọn gàng
+                if (!hasDetailedData) {
+                  return (
+                    <div
+                      key={area.focusAreaId || area.code || area.name}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 rounded-xl border bg-card shadow-2xs hover:border-primary/40 transition-colors"
+                    >
+                      <div className="space-y-2 flex-1 min-w-0 sm:pr-6">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-sm sm:text-base text-foreground truncate">
+                            {area.name}
+                          </span>
+                          <span className="text-xs font-mono sm:hidden text-muted-foreground">
+                            {area.score !== null ? `${area.score}/100` : '--'}
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full rounded-full transition-all duration-500',
+                              area.score !== null && area.score >= 70
+                                ? 'bg-emerald-500'
+                                : area.score !== null && area.score >= 50
+                                ? 'bg-amber-500'
+                                : 'bg-destructive'
+                            )}
+                            style={{ width: `${Math.min(100, Math.max(0, area.score || 0))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <div className="hidden sm:flex items-baseline gap-1 bg-muted/40 px-3 py-1.5 rounded-lg border">
+                          <span className={cn('font-bold text-base sm:text-lg font-mono', area.score !== null ? areaScoreTier.color : 'text-foreground')}>
+                            {area.score !== null ? area.score : '--'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">/ 100</span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={cn('text-[11px] font-semibold py-1', areaScoreTier.bg, areaScoreTier.color, areaScoreTier.border)}
+                        >
+                          {areaScoreTier.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Chế độ tương thích ngược cho dữ liệu cũ (có đầy đủ summary & tags)
                 const evidenceBadge = getEvidenceStatusBadge(area.evidenceStatus)
                 const priorityBadge = getPriorityBadge(area.priority)
-                const areaScoreTier = getPerformanceTier(area.score)
+                const areaConfidenceBadge = getConfidenceBadge(area.confidence)
 
                 return (
                   <div
                     key={area.focusAreaId || area.code}
-                    className="flex flex-col gap-3 rounded-xl border bg-card/60 p-4 sm:p-5 shadow-2xs transition-colors hover:border-primary/40"
+                    className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:p-5 shadow-2xs transition-colors hover:border-primary/40"
                   >
                     {/* Focus Area Header */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
                       <div className="space-y-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h4 className="font-semibold text-sm sm:text-base text-foreground">
@@ -485,85 +704,55 @@ export default function InterviewReportView({
                           <Badge variant="outline" className="text-[10px] font-mono">
                             {area.code}
                           </Badge>
-                          <Badge variant="outline" className={cn('text-[10px] font-medium py-0', priorityBadge.className)}>
+                          <Badge variant="outline" className={cn('text-[10px] py-0', priorityBadge.className)}>
                             {priorityBadge.label}
                           </Badge>
-                          <Badge variant={evidenceBadge.variant} className="text-[10px]">
+                          <Badge
+                            variant={evidenceBadge.variant}
+                            className={cn('text-[10px] py-0 border', evidenceBadge.className)}
+                          >
                             {evidenceBadge.label}
                           </Badge>
                         </div>
                       </div>
 
                       {/* Score display */}
-                      <div className="flex items-baseline gap-1 bg-muted/40 px-3 py-1 rounded-lg border">
-                        <span className="font-bold text-base sm:text-lg text-foreground font-mono">
+                      <div className="flex items-baseline gap-1.5 bg-muted/30 px-3 py-1.5 rounded-lg border">
+                        <span className={cn('font-bold text-base sm:text-lg font-mono', area.score !== null ? areaScoreTier.color : 'text-foreground')}>
                           {area.score !== null ? area.score : '--'}
                         </span>
                         <span className="text-xs text-muted-foreground">/ 100</span>
-                        <Badge variant="outline" className={cn('text-[9px] font-semibold ml-1 py-0', areaScoreTier.bg, areaScoreTier.color, areaScoreTier.border)}>
+                        <Badge
+                          variant="outline"
+                          className={cn('text-[10px] font-semibold ml-1 py-0', areaScoreTier.bg, areaScoreTier.color, areaScoreTier.border)}
+                        >
                           {areaScoreTier.label}
                         </Badge>
                       </div>
                     </div>
 
-                    {/* Rationale */}
-                    {area.rationale && (
-                      <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed bg-muted/20 p-3 rounded-lg border border-border/50">
-                        {area.rationale}
+                    {/* Qualitative AI Summary for this Focus Area */}
+                    <div className="bg-muted/20 rounded-xl p-3.5 sm:p-4 border border-border/50 text-xs sm:text-sm leading-relaxed text-foreground/90 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground mb-1">
+                        <Sparkles className="size-3.5 text-primary" />
+                        <span>Đánh giá năng lực chuyên môn:</span>
+                      </div>
+                      <p className="whitespace-pre-line text-muted-foreground">
+                        {area.summary}
                       </p>
-                    )}
-
-                    {/* Strengths & Gaps 2-col mini grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      {/* Strengths */}
-                      {area.strengths && area.strengths.length > 0 && (
-                        <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs">
-                          <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                            <CheckCircle2 className="size-3.5 shrink-0" />
-                            Điểm sáng đã ghi nhận
-                          </span>
-                          <ul className="space-y-1 list-disc list-inside text-foreground/80 pl-1">
-                            {area.strengths.map((str: string, sIdx: number) => (
-                              <li key={sIdx} className="leading-snug">{str}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Gaps */}
-                      {area.gaps && area.gaps.length > 0 && (
-                        <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs">
-                          <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                            <AlertTriangle className="size-3.5 shrink-0" />
-                            Khoảng trống kiến thức cần bù đắp
-                          </span>
-                          <ul className="space-y-1 list-disc list-inside text-foreground/80 pl-1">
-                            {area.gaps.map((gap: string, gIdx: number) => (
-                              <li key={gIdx} className="leading-snug">{gap}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
                     </div>
 
-                    {/* Feedback and Evidence Turn IDs */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2 border-t border-border/60">
-                      {area.feedback && (
-                        <p className="text-muted-foreground flex-1 min-w-[240px]">
-                          <strong className="text-foreground font-medium">Gợi ý phát triển: </strong>
-                          {area.feedback}
-                        </p>
-                      )}
-                      {area.evidenceTurnIds && area.evidenceTurnIds.length > 0 && (
-                        <div className="flex items-center gap-1 shrink-0 text-muted-foreground">
-                          <span>Dẫn chứng từ:</span>
-                          {area.evidenceTurnIds.map((tId: number) => (
-                            <Badge key={tId} variant="secondary" className="text-[10px] font-mono">
-                              Lượt #{tId}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                    {/* Footer Metadata */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>Độ tin cậy:</span>
+                        <Badge variant="outline" className={cn('text-[10px] py-0', areaConfidenceBadge.className)}>
+                          {areaConfidenceBadge.label}
+                        </Badge>
+                      </div>
+                      <span className="text-[11px]">
+                        Trọng số ưu tiên: {area.priority === 'HIGH' ? 'Cao (x3)' : area.priority === 'MEDIUM' ? 'Vừa (x2)' : 'Cơ bản (x1)'}
+                      </span>
                     </div>
                   </div>
                 )
@@ -573,114 +762,7 @@ export default function InterviewReportView({
         </Card>
       )}
 
-      {/* 5. Strengths & Improvements Highlights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Strengths */}
-        <Card className="shadow-2xs border">
-          <CardHeader className="py-3 px-4 sm:px-5 border-b bg-emerald-500/5">
-            <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="size-4" />
-              <span>Các điểm mạnh nổi bật ({report.strengths?.length || 0})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 flex flex-col gap-3">
-            {report.strengths && report.strengths.length > 0 ? (
-              report.strengths.map((item: ReportItem, idx: number) => (
-                <div key={idx} className="flex flex-col gap-1 p-3 rounded-lg border bg-card text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-foreground text-sm">{item.title}</span>
-                    {item.evidenceTurnIds && item.evidenceTurnIds.length > 0 && (
-                      <Badge variant="outline" className="text-[10px] font-mono">
-                        Lượt #{item.evidenceTurnIds.join(', #')}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-muted-foreground">Chưa có danh sách điểm mạnh cụ thể.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Improvements */}
-        <Card className="shadow-2xs border">
-          <CardHeader className="py-3 px-4 sm:px-5 border-b bg-amber-500/5">
-            <CardTitle className="text-xs sm:text-sm font-semibold flex items-center gap-2 text-amber-600 dark:text-amber-400">
-              <TrendingUp className="size-4" />
-              <span>Điểm cần hoàn thiện ({report.improvements?.length || 0})</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 flex flex-col gap-3">
-            {report.improvements && report.improvements.length > 0 ? (
-              report.improvements.map((item: ReportItem, idx: number) => (
-                <div key={idx} className="flex flex-col gap-1 p-3 rounded-lg border bg-card text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-foreground text-sm">{item.title}</span>
-                    {item.evidenceTurnIds && item.evidenceTurnIds.length > 0 && (
-                      <Badge variant="outline" className="text-[10px] font-mono">
-                        Lượt #{item.evidenceTurnIds.join(', #')}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
-              ))
-            ) : (
-              <p className="text-xs text-muted-foreground">Chưa có danh sách điểm cần cải thiện.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 6. Action Plan / Learning Roadmap */}
-      {report.actionPlan && report.actionPlan.length > 0 && (
-        <Card className="shadow-2xs border">
-          <CardHeader className="py-3 px-4 sm:px-5 border-b bg-primary/5">
-            <CardTitle className="text-sm sm:text-base font-semibold flex items-center justify-between">
-              <span className="flex items-center gap-2 text-primary">
-                <Compass className="size-4" />
-                <span>Lộ trình hành động & Kế hoạch ôn luyện đề xuất</span>
-              </span>
-              <Badge variant="outline" className="text-xs font-normal">
-                {report.actionPlan.length} bước hành động
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 flex flex-col gap-3">
-            {report.actionPlan.map((step: ActionPlanItem, idx: number) => (
-              <div
-                key={idx}
-                className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-4 rounded-xl border bg-card text-xs shadow-2xs"
-              >
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
-                  #{step.priority || idx + 1}
-                </div>
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-foreground">
-                    {step.action}
-                  </p>
-                  {step.reason && (
-                    <p className="text-muted-foreground leading-relaxed">
-                      <strong className="text-foreground font-medium">Lý do: </strong>
-                      {step.reason}
-                    </p>
-                  )}
-                  {step.suggestion && (
-                    <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60 text-foreground/90 font-medium">
-                      <span className="text-primary font-semibold">Gợi ý thực hành: </span>
-                      {step.suggestion}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 7. Bottom Navigation and Call to Action */}
+      {/* 6. Bottom Navigation and Call to Action */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border bg-muted/20 print:hidden">
         <div className="flex items-center gap-2">
           {onViewConversation && (

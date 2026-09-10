@@ -69,7 +69,7 @@ export default function InterviewChatView({
 
         return (
           <div
-            key={turn.id ?? index}
+            key={`${turn.id ?? 'turn'}-${turn.turnIndex ?? index}-${turn.role}`}
             className={cn(
               'flex gap-3 max-w-[90%] sm:max-w-[80%]',
               isInterviewer ? 'self-start' : 'self-end flex-row-reverse',

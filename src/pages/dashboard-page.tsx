@@ -156,12 +156,12 @@ export default function DashboardPage() {
                         >
                           {session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}
                         </Badge>
-                        {isCompleted && session.overallScore !== null && (
+                        {session.overallScore !== null && (
                           <Badge
-                            variant="secondary"
-                            className="text-[10px] font-semibold text-success bg-success/10 shrink-0"
+                            variant="outline"
+                            className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15 shrink-0"
                           >
-                            {session.overallScore}/100
+                            {session.overallScore}/100 điểm
                           </Badge>
                         )}
                       </div>

@@ -94,6 +94,9 @@ export default function InterviewAnswerInput({
     if (lower.includes('could not map ai response') || lower.includes('interviewreplyresult') || lower.includes('malformed')) {
       return 'Mô hình AI phản hồi sai định dạng JSON có cấu trúc (thường xảy ra khi câu trả lời thử mic/chưa đúng ngữ cảnh kỹ thuật, hoặc mô hình AI miễn phí sinh thiếu trường).'
     }
+    if (lower.includes('out of sequence') || lower.includes('does not match the current interviewer turn')) {
+      return 'Thứ tự lượt trả lời chưa khớp với câu hỏi hiện tại. Hệ thống đã đồng bộ lại lượt, vui lòng bấm gửi lại!'
+    }
     if (lower.includes('500') || lower.includes('server error') || lower.includes('internal error')) {
       return 'Máy chủ AI tạm thời quá tải hoặc quá thời gian phản hồi (mã lỗi 500).'
     }
@@ -192,14 +195,20 @@ export default function InterviewAnswerInput({
       if (submitAnswer.isPending || isSubmittingVoice) return
       setIsSubmittingVoice(true)
       try {
-        const clientTurnId =
-          cachedClientTurnId ||
-          lastCandidateTurn?.requestId ||
-          crypto.randomUUID()
+        const isFailedCandidateTurn = Boolean(
+          lastCandidateTurn &&
+            (lastCandidateTurn.processingStatus === 'FAILED' ||
+              Boolean(lastCandidateTurn.processingErrorCode) ||
+              (lastInterviewerTurn && lastCandidateTurn.turnIndex > lastInterviewerTurn.turnIndex)),
+        )
 
-        const targetExpectedIndex = lastCandidateTurn
-          ? Math.max(0, lastCandidateTurn.turnIndex - 1)
+        const targetExpectedIndex = isFailedCandidateTurn
+          ? Math.max(0, lastCandidateTurn!.turnIndex - 1)
           : expectedTurnIndex
+
+        const clientTurnId = isFailedCandidateTurn
+          ? (cachedClientTurnId || lastCandidateTurn?.requestId || crypto.randomUUID())
+          : (cachedClientTurnId || crypto.randomUUID())
 
         await submitAnswer.mutateAsync({
           promptTurnId,
@@ -215,6 +224,9 @@ export default function InterviewAnswerInput({
         setSubmissionError(null)
       } catch (error) {
         const rawMsg = getErrorMessage(error)
+        if (rawMsg.includes('INTERVIEW_TURN_OUT_OF_SEQUENCE') || rawMsg.includes('does not match the current interviewer turn')) {
+          void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session(session.id) })
+        }
         const friendlyMsg = formatFriendlyError(rawMsg)
         setSubmissionError(friendlyMsg)
         toast.error('Thử lại chưa thành công: ' + friendlyMsg)
@@ -247,9 +259,8 @@ export default function InterviewAnswerInput({
     setIsSubmittingVoice(true)
     try {
       const clientTurnId = crypto.randomUUID()
-      const targetExpectedIndex = lastCandidateTurn
-        ? Math.max(0, lastCandidateTurn.turnIndex - 1)
-        : expectedTurnIndex
+      // Khi gửi câu trả lời mới, lượt kỳ vọng luôn là lượt hiện tại của Interviewer
+      const targetExpectedIndex = expectedTurnIndex
 
       setTextInput('')
       setCachedAnswerText(content)
@@ -269,6 +280,9 @@ export default function InterviewAnswerInput({
       setSubmissionError(null)
     } catch (error) {
       const rawMsg = getErrorMessage(error)
+      if (rawMsg.includes('INTERVIEW_TURN_OUT_OF_SEQUENCE') || rawMsg.includes('does not match the current interviewer turn')) {
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session(session.id) })
+      }
       const friendlyMsg = formatFriendlyError(rawMsg)
       setSubmissionError(friendlyMsg)
       setTextInput(content) // phục hồi lại văn bản cho người dùng nếu lỗi
@@ -339,7 +353,9 @@ export default function InterviewAnswerInput({
         {failedAnswerContent && (
           <div className="rounded-xl border border-border/70 bg-background/80 p-3 text-xs">
             <span className="font-semibold text-muted-foreground block mb-1 text-[11px]">
-              Nội dung giọng nói đã ghi nhận (không bị mất):
+              {session.mode === 'TEXT'
+                ? 'Nội dung câu trả lời đã ghi nhận (không bị mất):'
+                : 'Nội dung giọng nói đã ghi nhận (không bị mất):'}
             </span>
             <p className="text-foreground leading-relaxed italic line-clamp-4 select-text">
               &ldquo;{failedAnswerContent}&rdquo;

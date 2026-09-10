@@ -170,6 +170,8 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
   }
 }
 
+const checkedReportSessionIds = new Set<number>()
+
 export async function listSessions(
   scope: SessionListScope = 'ACTIVE',
   page = 0,
@@ -203,11 +205,16 @@ export async function listSessions(
         else if (rawStatus === 'CANCELLED' || rawStatus === 'EXPIRED') updatedStatus = 'ABANDONED'
 
         let overallScore = s.overallScore
-        if (updatedStatus === 'COMPLETED' && overallScore == null) {
+        if (updatedStatus === 'COMPLETED' && overallScore == null && !checkedReportSessionIds.has(s.id)) {
+          checkedReportSessionIds.add(s.id)
           try {
-            const rep = await api.get<{ overallScore?: number }>(`/interview-sessions/${s.id}/report`)
-            if (typeof rep.data?.overallScore === 'number') {
-              overallScore = rep.data.overallScore
+            const rep = await api.get<{
+              overallScore?: number
+              report?: { score?: number | null }
+            }>(`/interview-sessions/${s.id}/report`)
+            const fetchedScore = rep.data?.report?.score ?? rep.data?.overallScore
+            if (typeof fetchedScore === 'number') {
+              overallScore = fetchedScore
             }
           } catch {
             // report chưa xong
@@ -411,10 +418,15 @@ export async function retrySession(
 
 export async function getSessionReport(sessionId: number): Promise<InterviewReport> {
   const res = await api.get<InterviewReport>(`/interview-sessions/${sessionId}/report`)
-  if (res.data?.overallScore !== undefined) {
+  const score = (res.data as any)?.report?.score ?? res.data?.overallScore
+  if (res.data?.status === 'COMPLETED') {
     updateStoredSessionSummary(sessionId, {
       status: 'COMPLETED',
-      overallScore: res.data.overallScore,
+      overallScore: score,
+    })
+  } else if (res.data?.status === 'SCORING_FAILED') {
+    updateStoredSessionSummary(sessionId, {
+      status: 'SCORING_FAILED',
     })
   }
   return res.data
@@ -422,10 +434,11 @@ export async function getSessionReport(sessionId: number): Promise<InterviewRepo
 
 export async function retryScoring(sessionId: number): Promise<InterviewReport> {
   const res = await api.post<InterviewReport>(`/interview-sessions/${sessionId}/scoring/retry`)
-  if (res.data?.overallScore !== undefined) {
+  const score = (res.data as any)?.report?.score ?? res.data?.overallScore
+  if (res.data?.status) {
     updateStoredSessionSummary(sessionId, {
-      status: 'COMPLETED',
-      overallScore: res.data.overallScore,
+      status: res.data.status,
+      overallScore: score ?? null,
     })
   }
   return res.data
