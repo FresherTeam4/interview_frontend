@@ -4,7 +4,6 @@ import {
   AlertCircle,
   Loader2,
   Mic,
-  Play,
   RefreshCw,
   RotateCw,
   Send,
@@ -16,7 +15,7 @@ import { getErrorMessage } from '@/api/api-error'
 import { transcribeAudio } from '@/api/speech'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { useAudioRecorder } from '@/hooks/use-audio-recorder'
-import { useResumeSession, useSubmitTextAnswer } from '@/hooks/use-interview-session'
+import { useSubmitTextAnswer } from '@/hooks/use-interview-session'
 import { stopAllInterviewAudio } from '@/hooks/use-turn-audio-player'
 import { cn } from '@/lib/utils'
 import type { InterviewSession } from '@/types/session'
@@ -45,7 +44,6 @@ export default function InterviewAnswerInput({
 
   const queryClient = useQueryClient()
   const submitAnswer = useSubmitTextAnswer(session.id)
-  const resumeSession = useResumeSession(session.id)
 
   const {
     isRecording,
@@ -65,7 +63,6 @@ export default function InterviewAnswerInput({
     }
   }, [recorderError])
 
-  const isPaused = session.status === 'PAUSED'
   const isEngineRetry = session.awaitingAction === 'ENGINE_RETRY'
   const isFailed = session.status === 'FAILED' || isEngineRetry
   const isEvaluating = session.awaitingAction === 'ENGINE_RESPONSE'
@@ -299,15 +296,6 @@ export default function InterviewAnswerInput({
     }
   }
 
-  async function handleResume() {
-    try {
-      await resumeSession.mutateAsync({ expectedVersion: session.version })
-      toast.success('Đã tiếp tục buổi phỏng vấn.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    }
-  }
-
   async function handleRefresh() {
     setIsRefreshing(true)
     try {
@@ -437,24 +425,6 @@ export default function InterviewAnswerInput({
             </Button>
           )}
         </div>
-      </div>
-    )
-  }
-
-  if (isPaused) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-6 text-center bg-muted/20">
-        <p className="text-sm text-muted-foreground">
-          Phiên phỏng vấn đang tạm dừng. Hãy bấm nút bên dưới khi bạn đã sẵn sàng tiếp tục.
-        </p>
-        <Button onClick={() => void handleResume()} disabled={resumeSession.isPending} className="gap-2">
-          {resumeSession.isPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Play className="size-4 fill-current" />
-          )}
-          Tiếp tục phỏng vấn
-        </Button>
       </div>
     )
   }

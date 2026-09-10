@@ -648,28 +648,28 @@ export default function InterviewReportView({
                             {area.name}
                           </span>
                           <span className="text-xs font-mono sm:hidden text-muted-foreground">
-                            {area.score !== null ? `${area.score}/100` : '--'}
+                            {typeof area.score === 'number' && !isNaN(area.score) ? `${area.score}/100` : '--'}
                           </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                           <div
                             className={cn(
                               'h-full rounded-full transition-all duration-500',
-                              area.score !== null && area.score >= 70
+                              typeof area.score === 'number' && area.score >= 70
                                 ? 'bg-emerald-500'
-                                : area.score !== null && area.score >= 50
+                                : typeof area.score === 'number' && area.score >= 50
                                 ? 'bg-amber-500'
                                 : 'bg-destructive'
                             )}
-                            style={{ width: `${Math.min(100, Math.max(0, area.score || 0))}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, typeof area.score === 'number' ? area.score : 0))}%` }}
                           />
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
                         <div className="hidden sm:flex items-baseline gap-1 bg-muted/40 px-3 py-1.5 rounded-lg border">
-                          <span className={cn('font-bold text-base sm:text-lg font-mono', area.score !== null ? areaScoreTier.color : 'text-foreground')}>
-                            {area.score !== null ? area.score : '--'}
+                          <span className={cn('font-bold text-base sm:text-lg font-mono', typeof area.score === 'number' && !isNaN(area.score) ? areaScoreTier.color : 'text-foreground')}>
+                            {typeof area.score === 'number' && !isNaN(area.score) ? area.score : '--'}
                           </span>
                           <span className="text-xs text-muted-foreground">/ 100</span>
                         </div>

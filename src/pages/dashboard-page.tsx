@@ -156,14 +156,22 @@ export default function DashboardPage() {
                         >
                           {session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}
                         </Badge>
-                        {session.overallScore !== null && (
+                        {typeof session.overallScore === 'number' && !isNaN(session.overallScore) ? (
                           <Badge
                             variant="outline"
                             className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15 shrink-0"
                           >
                             {session.overallScore}/100 điểm
                           </Badge>
-                        )}
+                        ) : session.status === 'COMPLETED' ? (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5 shrink-0"
+                            title="Chưa đủ dữ liệu điểm"
+                          >
+                            Chưa đủ dữ liệu điểm
+                          </Badge>
+                        ) : null}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {session.profileHeadline || 'Hồ sơ'} ·{' '}

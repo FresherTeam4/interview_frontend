@@ -5,19 +5,14 @@ import {
   Clock,
   History,
   MessageSquare,
-  Pause,
-  Play,
   Plus,
   User,
   Volume2,
   VolumeX,
 } from 'lucide-react'
 import { Link } from 'react-router'
-import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { getErrorMessage } from '@/api/api-error'
-import { usePauseSession, useResumeSession } from '@/hooks/use-interview-session'
 import { useInterviewTimer } from '@/features/session/hooks/use-interview-timer'
 import { ROUTES } from '@/constants/routes'
 import {
@@ -41,15 +36,12 @@ export default function InterviewRoomHeader({
   onToggleAutoPlayAudio,
 }: InterviewRoomHeaderProps) {
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
-  const pauseSession = usePauseSession(session.id)
-  const resumeSession = useResumeSession(session.id)
 
-  const isPaused = session.status === 'PAUSED'
   const isScoring = session.status === 'SCORING'
   const isFailed = session.status === 'SCORING_FAILED'
   const isCompleted = session.status === 'COMPLETED'
   const isFinished = isCompleted || isScoring || isFailed
-  const isBusy = pauseSession.isPending || resumeSession.isPending
+  const isBusy = session.awaitingAction === 'ENGINE_RESPONSE'
   const turnCount = session.turns?.length || 0
 
   const timer = useInterviewTimer({
@@ -57,22 +49,8 @@ export default function InterviewRoomHeader({
     initialRemainingSeconds: session.remainingSeconds,
     durationMinutes: session.durationMinutes || 30,
     startedAt: session.startedAt,
-    isPaused: isPaused || isFinished,
+    isPaused: isFinished,
   })
-
-  async function handleTogglePause() {
-    try {
-      if (isPaused) {
-        await resumeSession.mutateAsync({ expectedVersion: session.version })
-        toast.success('Đã tiếp tục buổi phỏng vấn.')
-      } else {
-        await pauseSession.mutateAsync({ expectedVersion: session.version })
-        toast.info('Đã tạm dừng phiên phỏng vấn.')
-      }
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    }
-  }
 
   return (
     <div className="flex flex-col gap-2.5 rounded-xl border bg-card p-3 sm:p-4 shadow-xs">
@@ -90,7 +68,7 @@ export default function InterviewRoomHeader({
 
           <Badge
             variant={
-              isPaused || isFailed
+              isFailed
                 ? 'destructive'
                 : isScoring
                   ? 'outline'
@@ -124,7 +102,7 @@ export default function InterviewRoomHeader({
 
         {/* Quick Actions */}
         <div className="flex items-center gap-2 shrink-0">
-          {!isFinished && (session.status === 'IN_PROGRESS' || isPaused) ? (
+          {!isFinished && session.status === 'IN_PROGRESS' ? (
             <>
               {session.mode !== 'TEXT' && onToggleAutoPlayAudio ? (
                 <Button
@@ -133,9 +111,9 @@ export default function InterviewRoomHeader({
                   size="sm"
                   onClick={onToggleAutoPlayAudio}
                   className={cn(
-                    'gap-1.5 text-xs h-8 transition-colors',
+                    'gap-1.5 text-xs h-8 font-medium transition-colors',
                     autoPlayAudio
-                      ? 'border-primary/40 text-primary bg-primary/10 hover:bg-primary/20 font-medium'
+                      ? 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
                   title={
@@ -158,28 +136,8 @@ export default function InterviewRoomHeader({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => void handleTogglePause()}
-                disabled={isBusy || session.awaitingAction === 'ENGINE_RESPONSE'}
-                className="gap-1.5 text-xs h-8"
-              >
-                {isPaused ? (
-                  <>
-                    <Play className="size-3.5 fill-current text-success" />
-                    <span>Tiếp tục</span>
-                  </>
-                ) : (
-                  <>
-                    <Pause className="size-3.5 text-muted-foreground" />
-                    <span>Tạm dừng</span>
-                  </>
-                )}
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={() => setCompleteDialogOpen(true)}
-                disabled={isBusy || session.awaitingAction === 'ENGINE_RESPONSE'}
+                disabled={isBusy}
                 className="gap-1.5 text-xs h-8 border-primary/30 text-primary hover:bg-primary/10 font-medium"
               >
                 <Award className="size-3.5" />
@@ -199,7 +157,7 @@ export default function InterviewRoomHeader({
               <Button variant="outline" size="sm" asChild className="gap-1.5 text-xs h-8">
                 <Link to={ROUTES.sessionList}>
                   <History className="size-3.5" />
-                  <span className="hidden sm:inline">Xem lịch sử</span>
+                  <span>Danh sách phiên</span>
                 </Link>
               </Button>
             </>
@@ -235,9 +193,7 @@ export default function InterviewRoomHeader({
             <Clock className="size-3.5" />
             {isFinished
               ? 'Đã kết thúc'
-              : isPaused
-                ? `Tạm dừng (${timer.formattedTime})`
-                : `${timer.formattedTime} còn lại`}
+              : `${timer.formattedTime} còn lại`}
           </span>
         </div>
       </div>
