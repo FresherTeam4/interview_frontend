@@ -17,6 +17,7 @@ import { useInterviewTimer } from '@/features/session/hooks/use-interview-timer'
 import { ROUTES } from '@/constants/routes'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
+  SESSION_MODE_LABEL,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
 import SessionCompleteDialog from '@/features/session/components/session-complete-dialog'
@@ -104,7 +105,7 @@ export default function InterviewRoomHeader({
         <div className="flex items-center gap-2 shrink-0">
           {!isFinished && session.status === 'IN_PROGRESS' ? (
             <>
-              {session.mode !== 'TEXT' && onToggleAutoPlayAudio ? (
+              {session.mode === 'VOICE_TURN_BASED' && onToggleAutoPlayAudio ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -171,8 +172,15 @@ export default function InterviewRoomHeader({
           <Badge variant="outline" className="text-[11px] font-normal py-0 h-5">
             Độ khó: <strong className="ml-1 font-semibold text-foreground">{INTERVIEW_DIFFICULTY_LABEL[session.difficulty]}</strong>
           </Badge>
-          <Badge variant="outline" className="text-[11px] font-normal py-0 h-5">
-            Hình thức: <strong className="ml-1 font-semibold text-foreground">{session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}</strong>
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-[11px] font-normal py-0 h-5',
+              session.mode === 'VOICE_REALTIME' && 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+              session.mode === 'VOICE_TURN_BASED' && 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300',
+            )}
+          >
+            Hình thức: <strong className="ml-1 font-semibold text-foreground">{SESSION_MODE_LABEL[session.mode] || session.mode}</strong>
           </Badge>
           <span className="flex items-center gap-1 font-medium text-foreground ml-1">
             <MessageSquare className="size-3.5 text-primary" />

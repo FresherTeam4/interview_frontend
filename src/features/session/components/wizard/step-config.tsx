@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, MessageSquareText, Mic, Play } from 'lucide-react'
+import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, MessageSquareText, Mic, Play, Radio } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
@@ -103,7 +103,32 @@ export default function StepConfig({
                 <Mic className="size-3.5 text-primary" />
                 Hình thức phỏng vấn
               </label>
-              <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="grid gap-2.5 sm:grid-cols-3">
+                <div
+                  onClick={() => onChangeConfig({ mode: 'VOICE_REALTIME' })}
+                  className={cn(
+                    'cursor-pointer p-3 rounded-lg border text-left transition-all space-y-1.5 relative overflow-hidden',
+                    config.mode === 'VOICE_REALTIME'
+                      ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
+                      : 'border-border/80 bg-card/60 hover:border-primary/40',
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="size-6 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Radio className="size-3.5 animate-pulse" />
+                      </div>
+                      <span className="font-semibold text-xs text-foreground">Giọng nói Realtime</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
+                      Gợi ý
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Trò chuyện 2 chiều trực tiếp độ trễ thấp, tự động ngắt lời khi nói, không cần bấm micro thủ công.
+                  </p>
+                </div>
+
                 <div
                   onClick={() => onChangeConfig({ mode: 'VOICE_TURN_BASED' })}
                   className={cn(
@@ -117,10 +142,10 @@ export default function StepConfig({
                     <div className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
                       <Mic className="size-3.5" />
                     </div>
-                    <span className="font-semibold text-xs text-foreground">Giọng nói (Voice)</span>
+                    <span className="font-semibold text-xs text-foreground">Giọng nói theo lượt</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    AI tự động đọc câu hỏi, ứng viên bấm micro để nói (hỗ trợ chuyển đổi giọng nói sang văn bản).
+                    AI đọc từng câu hỏi, bạn bấm micro để nói và gửi câu trả lời theo từng lượt đối thoại.
                   </p>
                 </div>
 
@@ -137,10 +162,10 @@ export default function StepConfig({
                     <div className="size-6 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0">
                       <MessageSquareText className="size-3.5" />
                     </div>
-                    <span className="font-semibold text-xs text-foreground">Văn bản thuần túy (Chat)</span>
+                    <span className="font-semibold text-xs text-foreground">Văn bản thuần túy</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Gõ câu trả lời trực tiếp trong khung chat. Không dùng micro, không thu âm, không tự động phát âm thanh.
+                    Gõ câu trả lời trực tiếp trong khung chat. Không dùng micro, không thu âm.
                   </p>
                 </div>
               </div>

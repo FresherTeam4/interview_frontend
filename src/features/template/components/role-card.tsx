@@ -62,8 +62,8 @@ export default function RoleCard({ role, onViewDetail, onPractice, onArchive }: 
   }
 
   return (
-    <Card className="flex flex-col justify-between hover:shadow-md transition-all border-border/80 group">
-      <div className="p-4 space-y-2.5">
+    <Card className="flex flex-col justify-between hover:shadow-md transition-all border-border/80 group py-0 gap-0">
+      <div className="p-3.5 space-y-2">
         {/* Top badges & action menu */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -132,46 +132,46 @@ export default function RoleCard({ role, onViewDetail, onPractice, onArchive }: 
         </div>
 
         {/* Title & Job Title Subtitle */}
-        <div>
+        <div className="space-y-1">
           <h3 className="text-base font-bold text-foreground leading-snug truncate" title={role.title}>
             {role.title}
           </h3>
-          <div className="flex items-center justify-between text-xs text-muted-foreground mt-1 gap-2">
-            <span className="truncate flex items-center gap-1.5" title={role.jobTitle || 'Trích xuất từ JD'}>
-              <Briefcase className="size-3 shrink-0 text-muted-foreground/70" />
-              <span className="truncate">
-                {role.jobTitle && role.title.trim().toLowerCase() !== role.jobTitle.trim().toLowerCase()
-                  ? role.jobTitle
-                  : 'Trích xuất từ JD'}
-              </span>
+          <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5" title={role.jobTitle || 'Trích xuất từ JD'}>
+            <Briefcase className="size-3 shrink-0 text-muted-foreground/70" />
+            <span className="truncate">
+              {role.jobTitle && role.title.trim().toLowerCase() !== role.jobTitle.trim().toLowerCase()
+                ? role.jobTitle
+                : 'Trích xuất từ JD'}
             </span>
-            <span className="shrink-0 text-[11px] text-muted-foreground/75">
-              {formatDateTime(role.updatedAt)}
-            </span>
-          </div>
+          </p>
         </div>
       </div>
 
-      {/* Footer action buttons */}
-      <div className="p-3 pt-2.5 px-4 border-t border-border/40 flex items-center justify-between gap-2 bg-muted/5">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-xs h-8"
-          onClick={() => onViewDetail(role.id)}
-        >
-          <Eye className="size-3.5" />
-          Xem tiêu chí
-        </Button>
+      {/* Footer action buttons & timestamp */}
+      <div className="p-3 pt-2 px-3.5 border-t border-border/40 bg-muted/5 space-y-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs h-8"
+            onClick={() => onViewDetail(role.id)}
+          >
+            <Eye className="size-3.5" />
+            Xem tiêu chí
+          </Button>
 
-        <Button
-          size="sm"
-          className="gap-1.5 text-xs font-semibold h-8"
-          onClick={() => onPractice(role)}
-        >
-          <Play className="size-3.5 fill-current" />
-          Phỏng vấn
-        </Button>
+          <Button
+            size="sm"
+            className="gap-1.5 text-xs font-semibold h-8 shadow-xs"
+            onClick={() => onPractice(role)}
+          >
+            <Play className="size-3.5 fill-current" />
+            Phỏng vấn
+          </Button>
+        </div>
+        <div className="text-[10px] text-muted-foreground/60 text-right leading-none">
+          {formatDateTime(role.updatedAt)}
+        </div>
       </div>
     </Card>
   )

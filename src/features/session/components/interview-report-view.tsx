@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { getErrorMessage } from '@/api/api-error'
 import { useRetryScoring, useSessionReport } from '@/hooks/use-interview-session'
 import { ROUTES } from '@/constants/routes'
+import { SESSION_MODE_LABEL } from '@/constants/session'
 import type {
   FocusAreaResult,
   ImprovementItem,
@@ -366,8 +367,18 @@ export default function InterviewReportView({
                     {confidenceBadge.label}
                   </Badge>
                 )}
-                <Badge variant="outline" className="text-[11px] font-medium py-0 h-5 border-primary/25 text-primary bg-primary/5">
-                  {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-[11px] font-medium py-0 h-5',
+                    session.mode === 'VOICE_REALTIME'
+                      ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                      : session.mode === 'VOICE_TURN_BASED'
+                        ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10'
+                        : 'border-primary/25 text-primary bg-primary/5',
+                  )}
+                >
+                  {SESSION_MODE_LABEL[session.mode] || session.mode}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground line-clamp-1">

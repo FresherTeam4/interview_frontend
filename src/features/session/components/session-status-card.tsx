@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/api/api-error'
 import { useRetrySession, useStartSession } from '@/hooks/use-interview-session'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
+  SESSION_MODE_LABEL,
   SESSION_STATUS,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
@@ -33,7 +34,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
       if (session.status === SESSION_STATUS.READY) {
         toast.success('Phòng phỏng vấn đã sẵn sàng! Bạn có thể bắt đầu ngay.')
       } else if (session.status === SESSION_STATUS.FAILED) {
-        toast.error('Quá trình chuẩn bị kịch bản phỏng vấn gặp sự cố.')
+        toast.error('Quá trình thiết lập kế hoạch phỏng vấn gặp sự cố.')
       }
       prevStatusRef.current = session.status
     }
@@ -72,7 +73,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
         </CardTitle>
         <CardDescription>
           {isGenerating
-            ? 'Đang chuẩn bị phiên phỏng vấn...'
+            ? 'Đang thiết lập kế hoạch phỏng vấn...'
             : isReady
               ? 'Phòng phỏng vấn đã sẵn sàng.'
               : isFailed
@@ -103,7 +104,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
           <div>
             <p className="text-muted-foreground">Hình thức</p>
             <p className="font-medium">
-              {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+              {SESSION_MODE_LABEL[session.mode] || session.mode}
             </p>
           </div>
           <div>
@@ -114,7 +115,7 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
             <p className="text-muted-foreground">Trạng thái đối thoại</p>
             <p className="font-medium">
               {isGenerating
-                ? 'AI đang chuẩn bị ngữ cảnh...'
+                ? 'AI đang phân tích hồ sơ & JD...'
                 : isReady
                   ? 'Sẵn sàng phỏng vấn tự do'
                   : isFailed
@@ -128,9 +129,9 @@ export default function SessionStatusCard({ session }: SessionStatusCardProps) {
           <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3.5 text-xs">
             <Loader2 className="size-4 animate-spin text-primary shrink-0" />
             <div className="space-y-0.5">
-              <p className="font-semibold text-foreground">AI đang thiết lập kịch bản phỏng vấn</p>
+              <p className="font-semibold text-foreground">AI đang thiết lập kế hoạch phỏng vấn</p>
               <p className="text-muted-foreground">
-                Hệ thống đang phân tích CV và tiêu chí JD để khởi tạo kế hoạch phỏng vấn và câu hỏi mở đầu. Trang sẽ tự động sẵn sàng trong giây lát.
+                Hệ thống đang phân tích CV và tiêu chí JD để xác định các trọng tâm đánh giá phù hợp. Trang sẽ tự động sẵn sàng trong giây lát.
               </p>
             </div>
           </div>

@@ -10,7 +10,7 @@ import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
 import { useSessions } from '@/hooks/use-interview-session'
 import { useInterviewTemplates } from '@/hooks/use-interview-templates'
 import { ROUTES, sessionDetailPath, profileDetailPath } from '@/constants/routes'
-import { SESSION_STATUS_LABEL } from '@/constants/session'
+import { SESSION_MODE_LABEL, SESSION_STATUS_LABEL } from '@/constants/session'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -154,7 +154,7 @@ export default function DashboardPage() {
                           variant="secondary"
                           className="text-[10px] shrink-0 font-normal border border-primary/20 text-primary bg-primary/5"
                         >
-                          {session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}
+                          {SESSION_MODE_LABEL[session.mode] || session.mode}
                         </Badge>
                         {typeof session.overallScore === 'number' && !isNaN(session.overallScore) ? (
                           <Badge

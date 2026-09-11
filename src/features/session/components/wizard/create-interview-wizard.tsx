@@ -54,7 +54,7 @@ export default function CreateInterviewWizard({
     languageCode: 'vi',
     durationMinutes: 30,
     interviewerStyle: 'FRIENDLY',
-    mode: 'VOICE_TURN_BASED',
+    mode: 'VOICE_REALTIME',
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -135,6 +135,7 @@ export default function CreateInterviewWizard({
           languageCode: config.languageCode,
           durationMinutes: config.durationMinutes,
           interviewerStyle: config.interviewerStyle,
+          mode: config.mode,
         },
         {
           headers: { 'Idempotency-Key': idempotencyKey },
@@ -154,7 +155,7 @@ export default function CreateInterviewWizard({
         mode: config.mode,
       })
 
-      toast.info('Đã tạo phiên phỏng vấn. AI đang thiết lập kịch bản và câu hỏi...')
+      toast.info('Đã tạo phiên phỏng vấn. AI đang phân tích CV & JD để thiết lập trọng tâm đánh giá...')
       if (onSuccess) {
         onSuccess(sessionId)
       } else {

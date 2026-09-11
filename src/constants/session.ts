@@ -34,7 +34,8 @@ export const SESSION_IN_PROGRESS_STATUSES: SessionStatus[] = [
 
 export const SESSION_MODE_LABEL: Record<SessionMode, string> = {
   TEXT: 'Văn bản',
-  VOICE_TURN_BASED: 'Giọng nói',
+  VOICE_TURN_BASED: 'Giọng nói theo lượt',
+  VOICE_REALTIME: 'Giọng nói thời gian thực',
 }
 
 export const INTERVIEW_DIFFICULTY_LABEL: Record<InterviewDifficulty, string> = {

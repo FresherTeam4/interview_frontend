@@ -10,7 +10,7 @@ export type SessionStatus =
   | 'ABANDONED'
   | 'FAILED'
 
-export type SessionMode = 'TEXT' | 'VOICE_TURN_BASED'
+export type SessionMode = 'TEXT' | 'VOICE_TURN_BASED' | 'VOICE_REALTIME'
 
 export type InterviewDifficulty = 'EASY' | 'MEDIUM' | 'HARD'
 
@@ -24,7 +24,7 @@ export type AwaitingAction =
   | 'NONE'
 
 export type TurnRole = 'INTERVIEWER' | 'CANDIDATE'
-export type TurnInputMode = 'TEXT' | 'VOICE_TURN_BASED'
+export type TurnInputMode = 'TEXT' | 'VOICE_TURN_BASED' | 'VOICE_REALTIME'
 
 export type SessionListScope = 'ACTIVE' | 'HISTORY' | 'ALL'
 
@@ -71,6 +71,8 @@ export interface InterviewSession {
   currentPrompt: CurrentPrompt | null
   turns: Turn[]
   voiceDraft: unknown | null
+  realtimeProvider?: string | null
+  realtimeVoiceName?: string | null
   statusMessage: string | null
   lastActivityAt: string | null
   startedAt: string | null

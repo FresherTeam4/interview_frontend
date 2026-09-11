@@ -440,7 +440,7 @@ export default function InterviewAnswerInput({
           disabled={isEvaluating || submitAnswer.isPending || isSubmittingVoice}
           placeholder={
             isEvaluating || submitAnswer.isPending || isSubmittingVoice
-              ? 'AI đang suy nghĩ và chuẩn bị câu hỏi tiếp theo...'
+              ? 'AI đang phân tích câu trả lời của bạn...'
               : 'Nhập câu trả lời của bạn tại đây (nhấn Enter để gửi, Shift + Enter để xuống dòng)...'
           }
           rows={2}
@@ -564,7 +564,7 @@ export default function InterviewAnswerInput({
                 {isSubmittingVoice || submitAnswer.isPending
                   ? '(Đang xử lý âm thanh và chuyển câu trả lời tới AI...)'
                   : isEvaluating
-                    ? '(AI đang phân tích câu trả lời và chuẩn bị câu hỏi tiếp theo...)'
+                    ? '(AI đang phân tích câu trả lời của bạn...)'
                     : '(Bấm nút bên cạnh để nói trực tiếp, không cần gõ văn bản)'}
               </span>
             </div>

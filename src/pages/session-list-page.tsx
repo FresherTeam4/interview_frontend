@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { ArrowRight, Award, Clock, History, Loader2, Play, Plus } from 'lucide-react'
 import { Link } from 'react-router'
+import { Plus, Clock, History, Play, Award, Loader2, ArrowRight } from 'lucide-react'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import ErrorState from '@/components/error-state'
 import PageHeader from '@/components/page-header'
+import ErrorState from '@/components/error-state'
 import DataPagination from '@/components/data-pagination'
 import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { getErrorMessage } from '@/api/api-error'
@@ -15,6 +15,7 @@ import { useSessions } from '@/hooks/use-interview-session'
 import { sessionDetailPath } from '@/constants/routes'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
+  SESSION_MODE_LABEL,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
 import type { InterviewSessionSummary, SessionListScope } from '@/types/session'
@@ -40,49 +41,25 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
               {session.profileHeadline ?? `Hồ sơ #${session.profileId}`}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <div className="flex items-center gap-1.5">
-              <Badge
-                variant="outline"
-                className="text-[10px] font-normal shrink-0 border-primary/25 text-primary bg-primary/5"
-              >
-                {session.mode === 'TEXT' ? 'Văn bản' : 'Giọng nói'}
-              </Badge>
-              <Badge
-                variant={
-                  isCompleted
+          <div className="shrink-0 pt-0.5">
+            <Badge
+              variant={
+                isCompleted
+                  ? 'default'
+                  : isReady
                     ? 'default'
-                    : isReady
-                      ? 'default'
-                      : isInProgress
-                        ? 'secondary'
-                        : isScoring
-                          ? 'outline'
-                          : session.status === 'FAILED'
-                            ? 'destructive'
-                            : 'outline'
-                }
-                className="text-[11px] shrink-0 font-medium"
-              >
-                {SESSION_STATUS_LABEL[session.status]}
-              </Badge>
-            </div>
-            {typeof session.overallScore === 'number' && !isNaN(session.overallScore) ? (
-              <Badge
-                variant="outline"
-                className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15"
-              >
-                {session.overallScore}/100 điểm
-              </Badge>
-            ) : isCompleted ? (
-              <Badge
-                variant="outline"
-                className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5"
-                title="Chưa đủ dữ liệu hoặc độ bao phủ tiêu chí để kết luận điểm"
-              >
-                Chưa đủ dữ liệu điểm
-              </Badge>
-            ) : null}
+                    : isInProgress
+                      ? 'secondary'
+                      : isScoring
+                        ? 'outline'
+                        : session.status === 'FAILED'
+                          ? 'destructive'
+                          : 'outline'
+              }
+              className="text-[11px] shrink-0 font-medium"
+            >
+              {SESSION_STATUS_LABEL[session.status]}
+            </Badge>
           </div>
         </div>
       </CardHeader>
@@ -103,7 +80,7 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
           <div className="truncate">
             <span>Hình thức: </span>
             <strong className="text-foreground font-medium">
-              {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+              {SESSION_MODE_LABEL[session.mode] || session.mode}
             </strong>
           </div>
           <div className="truncate">
@@ -118,9 +95,28 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
           </div>
         </div>
 
-        {/* Action button */}
-        <div className="flex items-center justify-end pt-1">
-          <Button size="sm" asChild className="w-full sm:w-auto gap-1.5 shadow-xs text-xs font-medium">
+        {/* Footer: Score / Status notice on left, Action button on right */}
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="min-w-0">
+            {typeof session.overallScore === 'number' && !isNaN(session.overallScore) ? (
+              <Badge
+                variant="outline"
+                className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15"
+              >
+                {session.overallScore}/100 điểm
+              </Badge>
+            ) : isCompleted ? (
+              <Badge
+                variant="outline"
+                className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5"
+                title="Chưa đủ dữ liệu hoặc độ bao phủ tiêu chí để kết luận điểm"
+              >
+                Chưa đủ dữ liệu điểm
+              </Badge>
+            ) : null}
+          </div>
+
+          <Button size="sm" asChild className="shrink-0 gap-1.5 shadow-xs text-xs font-medium">
             <Link to={sessionDetailPath(session.id)}>
               {isReady ? (
                 <>

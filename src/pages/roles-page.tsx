@@ -178,7 +178,6 @@ export default function RolesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Vị trí phỏng vấn"
-        description="Quản lý danh sách các vị trí tuyển dụng và khung tiêu chí phỏng vấn được trích xuất từ JD."
         actions={
           <CreateRoleDialog
             trigger={
@@ -244,11 +243,10 @@ export default function RolesPage() {
                     setMinePage(0)
                     setPublicPage(0)
                   }}
-                  className={`text-[11px] px-2 py-1 rounded-md transition-colors shrink-0 font-medium ${
-                    seniorityFilter === lvl
+                  className={`text-[11px] px-2 py-1 rounded-md transition-colors shrink-0 font-medium ${seniorityFilter === lvl
                       ? 'bg-primary text-primary-foreground font-semibold'
                       : 'bg-muted/60 text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   {lvl === 'ALL' ? 'Tất cả' : lvl}
                 </button>

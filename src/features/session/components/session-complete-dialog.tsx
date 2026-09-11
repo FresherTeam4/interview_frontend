@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { getErrorMessage } from '@/api/api-error'
 import { useCompleteSession } from '@/hooks/use-interview-session'
+import { SESSION_MODE_LABEL } from '@/constants/session'
 import type { InterviewSession } from '@/types/session'
 
 interface SessionCompleteDialogProps {
@@ -64,7 +65,7 @@ export default function SessionCompleteDialog({
           <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-xs">
             <span className="text-muted-foreground">Hình thức phỏng vấn:</span>
             <span className="font-semibold text-foreground">
-              {session.mode === 'TEXT' ? 'Văn bản (Chat)' : 'Giọng nói (Voice)'}
+              {SESSION_MODE_LABEL[session.mode] || session.mode}
             </span>
           </div>
 

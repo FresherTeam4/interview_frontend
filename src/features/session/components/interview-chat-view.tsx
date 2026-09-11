@@ -47,7 +47,7 @@ export default function InterviewChatView({
 
   // Directly auto-play the newest interviewer question as soon as it arrives
   useEffect(() => {
-    if (!autoPlayLatest || isEvaluating || sessionMode === 'TEXT') return
+    if (!autoPlayLatest || isEvaluating || sessionMode === 'TEXT' || sessionMode === 'VOICE_REALTIME') return
 
     const interviewerTurns = turns.filter((t) => t.role === 'INTERVIEWER' && t.id)
     if (interviewerTurns.length === 0) return

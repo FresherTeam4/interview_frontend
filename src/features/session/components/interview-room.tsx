@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/api/api-error'
 import { useRetryScoring } from '@/hooks/use-interview-session'
 import InterviewAnswerInput from '@/features/session/components/interview-answer-input'
 import InterviewChatView from '@/features/session/components/interview-chat-view'
+import InterviewRealtimeRoom from '@/features/session/components/interview-realtime-room'
 import InterviewReportView from '@/features/session/components/interview-report-view'
 import InterviewRoomHeader from '@/features/session/components/interview-room-header'
 import { cn } from '@/lib/utils'
@@ -156,8 +157,11 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
             </Card>
           )}
         </div>
+      ) : session.mode === 'VOICE_REALTIME' && !isFinished ? (
+        /* Realtime Voice Room: Giao diện phòng thoại trực tiếp chuyên biệt, không lồng khung chat theo lượt */
+        <InterviewRealtimeRoom session={session} />
       ) : (
-        /* Active Interview State OR Holding State while AI finishes speaking/scoring */
+        /* Turn-Based Interview State (Standard Chat View + Input / Scoring) */
         <div className="flex flex-col gap-4 w-full">
           <Card className="flex flex-col overflow-hidden shadow-xs border min-h-[480px] max-h-[66vh]">
             <CardContent className="flex-1 overflow-y-auto no-scrollbar p-4 sm:p-6 min-h-0">
@@ -170,7 +174,7 @@ export default function InterviewRoom({ session }: InterviewRoomProps) {
                     ? session.statusMessage
                     : null
                 }
-                autoPlayLatest={autoPlayAudio}
+                autoPlayLatest={isFinished || session.mode === 'VOICE_REALTIME' ? false : autoPlayAudio}
                 sessionMode={session.mode}
                 onAudioPlaybackChange={setIsAudioPlaying}
               />

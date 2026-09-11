@@ -7,6 +7,7 @@ import type {
   InterviewSessionAccepted,
   InterviewSessionSummary,
   SessionListScope,
+  SessionMode,
   SessionVersionRequest,
   SubmitTextAnswerRequest,
   TextAnswerAccepted,
@@ -59,6 +60,9 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
       profileName?: string
       durationMinutes?: number
       interviewerStyle?: string
+      mode?: SessionMode
+      realtimeProvider?: string | null
+      realtimeVoiceName?: string | null
     }>(`/interview-sessions/${sessionId}`).catch(() => null),
   ])
 
@@ -132,7 +136,7 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
   })
 
   const storedSession = getStoredSessions().find((s) => s.id === sessionId)
-  const sessionMode = storedSession?.mode || 'VOICE_TURN_BASED'
+  const sessionMode: SessionMode = statusData?.mode || storedSession?.mode || 'VOICE_TURN_BASED'
 
   return {
     id: sessionId,
@@ -161,6 +165,8 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
         : null,
     turns: mappedTurns,
     voiceDraft: null,
+    realtimeProvider: statusData?.realtimeProvider || null,
+    realtimeVoiceName: statusData?.realtimeVoiceName || null,
     statusMessage,
     lastActivityAt: new Date().toISOString(),
     startedAt: conv.startedAt,
