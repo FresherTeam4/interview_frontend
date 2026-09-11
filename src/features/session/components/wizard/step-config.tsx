@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, MessageSquareText, Mic, Play, Radio } from 'lucide-react'
+import { ArrowLeft, Bot, Briefcase, Clock, Flame, Globe, HeartHandshake, MessageSquare, Mic, Play, Radio } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Spinner } from '@/components/ui/spinner'
@@ -40,12 +40,12 @@ const STYLE_DETAILS: Record<string, { label: string; desc: string; icon: React.R
     icon: <HeartHandshake className="size-4 text-emerald-500" />,
   },
   PROFESSIONAL: {
-    label: 'Chuyên nghiệp & Chuẩn mực',
+    label: 'Chuyên nghiệp',
     desc: 'Chuẩn mực, hỏi sâu logic và giải pháp.',
     icon: <Briefcase className="size-4 text-blue-500" />,
   },
   CHALLENGING: {
-    label: 'Khắt khe (Stress Test)',
+    label: 'Khắt khe',
     desc: 'Phản biện sâu, thử thách bản lĩnh kỹ thuật.',
     icon: <Flame className="size-4 text-amber-500" />,
   },
@@ -159,13 +159,13 @@ export default function StepConfig({
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-md bg-muted text-foreground flex items-center justify-center shrink-0">
-                      <MessageSquareText className="size-3.5" />
+                    <div className="size-6 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <Bot className="size-3.5" />
                     </div>
-                    <span className="font-semibold text-xs text-foreground">Văn bản thuần túy</span>
+                    <span className="font-semibold text-xs text-foreground">AI Chatbot (Văn bản)</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Gõ câu trả lời trực tiếp trong khung chat. Không dùng micro, không thu âm.
+                    Chat trực tiếp với AI Interviewer qua tin nhắn văn bản. Không dùng micro, không thu âm.
                   </p>
                 </div>
               </div>

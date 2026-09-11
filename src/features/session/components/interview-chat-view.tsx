@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Bot, Loader2, Square, User, Volume2 } from 'lucide-react'
+import { Loader2, Square, Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTurnAudioPlayer } from '@/hooks/use-turn-audio-player'
 import { cn } from '@/lib/utils'
@@ -78,13 +78,17 @@ export default function InterviewChatView({
             {/* Avatar */}
             <div
               className={cn(
-                'flex size-9 shrink-0 items-center justify-center rounded-xl font-medium text-xs shadow-xs',
+                'flex size-9 shrink-0 items-center justify-center rounded-xl font-medium text-xs shadow-xs overflow-hidden',
                 isInterviewer
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-foreground border',
+                  ? 'border border-primary/30 ring-1 ring-primary/20 bg-primary/5'
+                  : 'border border-border/80 ring-1 ring-border/30 bg-muted/40',
               )}
             >
-              {isInterviewer ? <Bot className="size-5" /> : <User className="size-5" />}
+              {isInterviewer ? (
+                <img src="/ai-avatar.jpg" alt="AI Chatbot" className="size-full object-cover" />
+              ) : (
+                <img src="/candidate.png" alt="Bạn" className="size-full object-cover" />
+              )}
             </div>
 
             {/* Bubble */}
@@ -173,8 +177,8 @@ export default function InterviewChatView({
       {isEvaluating && (
         <div className="flex gap-3 max-w-[90%] sm:max-w-[80%] self-start animate-in fade-in-50 duration-200">
           {/* Avatar */}
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl font-medium text-xs shadow-xs bg-primary text-primary-foreground">
-            <Bot className="size-5" />
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl font-medium text-xs shadow-xs overflow-hidden border border-primary/30 ring-1 ring-primary/20 bg-primary/5">
+            <img src="/ai-avatar.jpg" alt="AI Chatbot" className="size-full object-cover" />
           </div>
 
           {/* Thinking bubble */}

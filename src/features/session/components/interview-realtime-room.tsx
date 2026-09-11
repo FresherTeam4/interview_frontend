@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowRightLeft,
-  Bot,
   ChevronDown,
   ChevronUp,
   Loader2,
@@ -10,7 +8,6 @@ import {
   PhoneOff,
   Radio,
   Sparkles,
-  User,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -93,7 +90,6 @@ export default function InterviewRealtimeRoom({
   const [isUserSpeaking, setIsUserSpeaking] = useState(false)
   const [wasInterrupted, setWasInterrupted] = useState(false)
   const [isFinishing, setIsFinishing] = useState(false)
-  const [isFallingBack, setIsFallingBack] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const interruptedTimerRef = useRef<number | null>(null)
   const userSpeakingTimerRef = useRef<number | null>(null)
@@ -249,19 +245,6 @@ export default function InterviewRealtimeRoom({
     }
   }, [backend, onFallbackRequested, queryClient, session.id, session.realtimeVoiceName])
 
-  async function handleFallback() {
-    if (!realtimeRef.current || isFallingBack) return
-    setIsFallingBack(true)
-    try {
-      await realtimeRef.current.stop(true)
-      await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session(session.id) })
-      onFallbackRequested?.()
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Không thể chuyển đổi chế độ.')
-      setIsFallingBack(false)
-    }
-  }
-
   return (
     <Card className="overflow-hidden border shadow-sm bg-gradient-to-b from-card via-card to-muted/20">
       <CardContent className="p-4 sm:p-6 flex flex-col gap-6">
@@ -304,29 +287,13 @@ export default function InterviewRealtimeRoom({
             </div>
           </div>
 
-          {/* Fallback & Finish Action Buttons */}
+          {/* Finish Action Button */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void handleFallback()}
-              disabled={isFallingBack || isFinishing}
-              className="gap-1.5 text-xs h-8 text-muted-foreground hover:text-foreground"
-              title="Chuyển sang chế độ bấm micro theo lượt nếu mạng chập chờn"
-            >
-              {isFallingBack ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <ArrowRightLeft className="size-3.5" />
-              )}
-              <span className="hidden sm:inline">Chuyển sang theo lượt</span>
-            </Button>
-
             <Button
               variant="destructive"
               size="sm"
               onClick={() => void handleFinish()}
-              disabled={isFinishing || isFallingBack}
+              disabled={isFinishing}
               className="gap-1.5 text-xs h-8 shadow-xs"
             >
               {isFinishing ? (
@@ -353,13 +320,17 @@ export default function InterviewRealtimeRoom({
             <div className="relative mb-3">
               <div
                 className={cn(
-                  'flex size-16 items-center justify-center rounded-2xl transition-all duration-300',
+                  'flex size-20 items-center justify-center rounded-2xl transition-all duration-300 overflow-hidden border-2',
                   isAiSpeaking
-                    ? 'bg-primary text-primary-foreground shadow-md scale-105'
-                    : 'bg-muted text-muted-foreground',
+                    ? 'border-primary shadow-lg scale-105 ring-4 ring-primary/25'
+                    : 'border-border/80 shadow-xs',
                 )}
               >
-                <Bot className="size-8" />
+                <img
+                  src="/ai-avatar.jpg"
+                  alt="Người phỏng vấn AI"
+                  className="size-full object-cover"
+                />
               </div>
               {isAiSpeaking && (
                 <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center">
@@ -405,13 +376,17 @@ export default function InterviewRealtimeRoom({
             <div className="relative mb-3">
               <div
                 className={cn(
-                  'flex size-16 items-center justify-center rounded-2xl transition-all duration-300',
+                  'flex size-20 items-center justify-center rounded-2xl transition-all duration-300 overflow-hidden border-2',
                   isUserSpeaking
-                    ? 'bg-emerald-600 text-white shadow-md scale-105'
-                    : 'bg-muted text-muted-foreground',
+                    ? 'border-emerald-500 shadow-lg scale-105 ring-4 ring-emerald-500/25'
+                    : 'border-border/80 shadow-xs',
                 )}
               >
-                <User className="size-8" />
+                <img
+                  src="/candidate.png"
+                  alt="Ứng viên"
+                  className="size-full object-cover"
+                />
               </div>
               {isUserSpeaking && (
                 <span className="absolute -top-1 -right-1 flex size-3.5 items-center justify-center">
@@ -499,12 +474,12 @@ export default function InterviewRealtimeRoom({
                     <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
                       {turn.role === 'INTERVIEWER' ? (
                         <>
-                          <Bot className="size-3 text-primary" />
+                          <img src="/ai-avatar.jpg" alt="AI" className="size-3.5 rounded-full object-cover shrink-0" />
                           <span>Người phỏng vấn AI</span>
                         </>
                       ) : (
                         <>
-                          <User className="size-3 text-emerald-600" />
+                          <img src="/candidate.png" alt="Bạn" className="size-3.5 rounded-full object-cover shrink-0" />
                           <span>Bạn (Ứng viên)</span>
                         </>
                       )}

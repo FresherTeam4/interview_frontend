@@ -1,6 +1,5 @@
 import { Check, FileUp, UserRoundPen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import CvUploadDialog from '@/features/profile/components/cv-upload-dialog'
 import { cn } from '@/lib/utils'
 import type { ProfileSummary } from '@/types/profile'
@@ -66,27 +65,31 @@ export default function ProfileSelector({
           const subtitle = [p.targetPosition, p.seniorityLevel].filter(Boolean).join(' · ')
 
           return (
-            <Card
+            <div
               key={p.id}
               onClick={() => onSelect(p.id)}
               className={cn(
-                'cursor-pointer transition-all hover:border-primary/50 relative overflow-hidden',
-                isSelected && 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs',
+                'cursor-pointer rounded-xl border p-3 text-left transition-all relative overflow-hidden space-y-1',
+                isSelected
+                  ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
+                  : 'border-border/80 bg-card hover:border-primary/40',
               )}
             >
               {isSelected && (
-                <div className="absolute top-2 right-2 size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                  <Check className="size-3" />
+                <div className="absolute top-2.5 right-2.5 size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+                  <Check className="size-3 stroke-[2.5]" />
                 </div>
               )}
-              <CardContent className="p-3.5 pr-8 space-y-1">
-                <div className="font-semibold text-sm truncate">{p.headline || 'Hồ sơ ứng viên'}</div>
-                {subtitle && <div className="text-xs text-muted-foreground truncate">{subtitle}</div>}
-                <div className="text-[11px] text-muted-foreground pt-0.5">
-                  {p.skillCount} kỹ năng · {p.projectCount} dự án
-                </div>
-              </CardContent>
-            </Card>
+              <div className="font-semibold text-sm text-foreground truncate pr-6">
+                {p.headline || 'Hồ sơ ứng viên'}
+              </div>
+              {subtitle ? (
+                <div className="text-xs text-muted-foreground truncate pr-6">{subtitle}</div>
+              ) : null}
+              <div className="text-[11px] text-muted-foreground/80 pt-0.5">
+                {p.skillCount} kỹ năng · {p.projectCount} dự án
+              </div>
+            </div>
           )
         })}
       </div>
