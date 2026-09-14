@@ -105,13 +105,21 @@ export class VoiceRealtimeInterview {
     this.transport?.endAudioStream()
     await this.microphone.stop()
     this.enqueue('SESSION_DISCONNECTED', undefined, 'CLIENT_STOPPED')
-    await this.flush()
+    try {
+      await this.flush()
+    } catch (err) {
+      console.warn('[Realtime] Failed to flush final events during stop:', err)
+    }
     if (this.sessionId !== undefined && this.connectionId !== undefined) {
-      await this.backend.disconnect(
-        this.sessionId,
-        this.connectionId,
-        this.disconnectPayload('CLIENT_STOPPED', fallbackToTurnBased),
-      )
+      try {
+        await this.backend.disconnect(
+          this.sessionId,
+          this.connectionId,
+          this.disconnectPayload('CLIENT_STOPPED', fallbackToTurnBased),
+        )
+      } catch (err) {
+        console.warn('[Realtime] Disconnect failed during stop:', err)
+      }
     }
     this.transport?.close()
     this.callbacks.onState(fallbackToTurnBased ? 'FALLBACK' : 'STOPPED')
@@ -120,7 +128,11 @@ export class VoiceRealtimeInterview {
   async finish(): Promise<void> {
     const sessionId = this.sessionId
     if (sessionId === undefined) return
-    await this.stop(false)
+    try {
+      await this.stop(false)
+    } catch (err) {
+      console.warn('[Realtime] Error stopping session before finish:', err)
+    }
     await this.backend.finishInterview(sessionId)
   }
 
@@ -141,36 +153,47 @@ export class VoiceRealtimeInterview {
       onReady: () => void this.onReady(),
       onPartialUserTranscript: (text) => this.onPartial(text),
       onFinalTurn: (turn) => {
-        if (turn.userTranscript) {
-          this.enqueue('USER_TRANSCRIPT_FINAL', turn.userTranscript)
+        const userText = turn.userTranscript?.trim()
+        if (userText) {
+          this.enqueue('USER_TRANSCRIPT_FINAL', userText)
         }
-        if (turn.assistantTranscript) {
-          this.enqueue(
-            'ASSISTANT_TRANSCRIPT_FINAL',
-            turn.assistantTranscript,
-            undefined,
-            turn.latencyMs,
-          )
+        const assistantText = turn.assistantTranscript?.trim()
+        if (assistantText) {
+          const latency =
+            typeof turn.latencyMs === 'number' && !isNaN(turn.latencyMs)
+              ? Math.max(0, Math.min(600000, Math.round(turn.latencyMs)))
+              : undefined
+          this.enqueue('ASSISTANT_TRANSCRIPT_FINAL', assistantText, undefined, latency)
         }
         if (turn.interrupted) {
           this.enqueue('ASSISTANT_INTERRUPTED')
         }
-        if (turn.latencyMs !== undefined) {
+        if (typeof turn.latencyMs === 'number' && !isNaN(turn.latencyMs) && turn.latencyMs >= 0) {
           this.latencySamples.push(turn.latencyMs)
         }
         this.callbacks.onTurn(turn)
-        void this.flush()
+        void this.flush().catch((err) => {
+          console.warn('[Realtime] Background flush on turn warning:', err)
+        })
       },
       onResumptionHandle: (handle) => {
-        this.resumptionHandle = handle
-        this.enqueue('SESSION_RESUMPTION_UPDATED', undefined, handle)
-        void this.flush()
+        const trimmed = handle?.trim()
+        if (trimmed) {
+          this.resumptionHandle = trimmed
+          this.enqueue('SESSION_RESUMPTION_UPDATED', undefined, trimmed)
+          void this.flush().catch((err) => {
+            console.warn('[Realtime] Background flush on resumption warning:', err)
+          })
+        }
       },
       onReconnectRequested: () => void this.reconnect('PROVIDER_GO_AWAY'),
       onClose: (reason) => void this.reconnect(reason),
       onError: (error) => {
-        this.enqueue('PROVIDER_ERROR', undefined, error.message.slice(0, 65535))
-        void this.flush()
+        const msg = error.message?.trim() || 'PROVIDER_ERROR'
+        this.enqueue('PROVIDER_ERROR', undefined, msg)
+        void this.flush().catch((err) => {
+          console.warn('[Realtime] Background flush on error warning:', err)
+        })
         this.callbacks.onError(error)
       },
     }
@@ -200,11 +223,13 @@ export class VoiceRealtimeInterview {
 
   private onPartial(text: string): void {
     this.callbacks.onPartialUserTranscript(text)
+    const trimmed = text?.trim()
+    if (!trimmed) return
     const now = performance.now()
-    if (text === this.lastPartial || now - this.lastPartialAt < 250) return
-    this.lastPartial = text
+    if (trimmed === this.lastPartial || now - this.lastPartialAt < 250) return
+    this.lastPartial = trimmed
     this.lastPartialAt = now
-    this.enqueue('USER_TRANSCRIPT_PARTIAL', text)
+    this.enqueue('USER_TRANSCRIPT_PARTIAL', trimmed)
   }
 
   private async reconnect(reason: string): Promise<void> {
@@ -258,13 +283,20 @@ export class VoiceRealtimeInterview {
     detail?: string,
     latencyMs?: number,
   ): void {
+    const safeTranscript = transcriptText?.trim() ? transcriptText.trim().slice(0, 16000) : undefined
+    const safeDetail = detail?.trim() ? detail.trim().slice(0, 65535) : undefined
+    const safeLatency =
+      typeof latencyMs === 'number' && !isNaN(latencyMs)
+        ? Math.max(0, Math.min(600000, Math.round(latencyMs)))
+        : undefined
+
     this.pendingEvents.push({
       providerEventId: crypto.randomUUID(),
       sequenceNumber: this.sequence++,
       eventType,
-      transcriptText,
-      detail,
-      latencyMs,
+      transcriptText: safeTranscript,
+      detail: safeDetail,
+      latencyMs: safeLatency,
       occurredAt: new Date().toISOString(),
     })
   }
@@ -281,7 +313,14 @@ export class VoiceRealtimeInterview {
     while (this.pendingEvents.length > 0) {
       const batch = this.pendingEvents.slice(0, 100)
       if (this.sessionId !== undefined && this.connectionId !== undefined) {
-        await this.backend.recordEvents(this.sessionId, this.connectionId, batch)
+        try {
+          await this.backend.recordEvents(this.sessionId, this.connectionId, batch)
+        } catch (err) {
+          console.error('[Realtime] Failed to record events batch:', err)
+          // Always advance queue so a bad batch doesn't permanently block stop or finish
+          this.pendingEvents.splice(0, batch.length)
+          throw err
+        }
       }
       this.pendingEvents.splice(0, batch.length)
     }

@@ -36,7 +36,8 @@ export default function InterviewAnswerInput({
   const [textInput, setTextInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [cachedAudioBlob, setCachedAudioBlob] = useState<Blob | null>(null)
-  const [isRetryingAudio, setIsRetryingAudio] = useState(false)
+  const [failedTextAnswer, setFailedTextAnswer] = useState<string | null>(null)
+  const [isRetrying, setIsRetrying] = useState(false)
 
   const queryClient = useQueryClient()
   const submitAnswer = useSubmitTextAnswer(session.id)
@@ -59,14 +60,18 @@ export default function InterviewAnswerInput({
     }
   }, [recorderError])
 
+  const isEngineRetry = session.awaitingAction === 'ENGINE_RETRY'
   const isEvaluating = session.awaitingAction === 'ENGINE_RESPONSE'
 
-  // Tìm turn của interviewer gần nhất
+  // Tìm turn của interviewer và candidate gần nhất
   const lastInterviewerTurn = [...session.turns].reverse().find((t) => t.role === 'INTERVIEWER')
+  const lastCandidateTurn = [...session.turns].reverse().find((t) => t.role === 'CANDIDATE')
 
-  const expectedTurnIndex =
-    session.currentTurnIndex ?? lastInterviewerTurn?.turnIndex ?? 0
+  const expectedTurnIndex = lastInterviewerTurn?.turnIndex ?? 0
   const promptTurnId = session.currentPrompt?.turnId ?? lastInterviewerTurn?.id ?? 0
+
+  // Văn bản câu trả lời có thể thử gửi lại
+  const retryableText = failedTextAnswer || (isEngineRetry && !textInput.trim() ? lastCandidateTurn?.content : null)
 
   function formatFriendlyError(rawMsg: string): string {
     const lower = rawMsg.toLowerCase()
@@ -76,7 +81,13 @@ export default function InterviewAnswerInput({
     if (lower.includes('empty transcription')) {
       return 'Không nhận diện được giọng nói trong bản ghi (âm thanh quá ngắn, quá nhỏ hoặc có tạp âm). Hãy thử nói to và rõ hơn nhé!'
     }
-    if (lower.includes('could not map ai response') || lower.includes('interviewreplyresult') || lower.includes('malformed')) {
+    if (
+      lower.includes('ai_malformed_output') ||
+      lower.includes('invalid or unparseable output') ||
+      lower.includes('could not map ai response') ||
+      lower.includes('interviewreplyresult') ||
+      lower.includes('malformed')
+    ) {
       return 'Mô hình AI phản hồi sai định dạng JSON có cấu trúc (thường xảy ra khi câu trả lời thử mic/chưa đúng ngữ cảnh kỹ thuật, hoặc mô hình AI miễn phí sinh thiếu trường).'
     }
     if (lower.includes('out of sequence') || lower.includes('does not match the current interviewer turn')) {
@@ -97,8 +108,9 @@ export default function InterviewAnswerInput({
   async function handleStartRecording() {
     // Dừng giọng đọc AI ngay lập tức khi người dùng bắt đầu trả lời
     stopAllInterviewAudio()
-    if (isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetryingAudio) return
+    if (isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetrying) return
     setCachedAudioBlob(null)
+    setFailedTextAnswer(null)
     const started = await startRecording()
     if (!started && recorderError) {
       toast.error(recorderError)
@@ -133,6 +145,7 @@ export default function InterviewAnswerInput({
 
       // Gửi thành công -> xóa dữ liệu tạm
       setCachedAudioBlob(null)
+      setFailedTextAnswer(null)
     } catch (error) {
       setCachedAudioBlob(audioBlob)
       const rawMsg = getErrorMessage(error)
@@ -144,7 +157,7 @@ export default function InterviewAnswerInput({
   }
 
   async function handleStopAndSubmit() {
-    if (isSubmittingVoice || submitAnswer.isPending || isRetryingAudio) return
+    if (isSubmittingVoice || submitAnswer.isPending || isRetrying) return
     try {
       const audioBlob = await stopRecording()
       if (!audioBlob) {
@@ -164,25 +177,76 @@ export default function InterviewAnswerInput({
     }
   }
 
-  async function handleRetryAudio() {
-    if (!cachedAudioBlob || isSubmittingVoice || submitAnswer.isPending || isRetryingAudio) return
+  async function handleRetry() {
+    if (isSubmittingVoice || submitAnswer.isPending || isRetrying) return
     stopAllInterviewAudio()
-    setIsRetryingAudio(true)
+
+    // 1. Nếu có file âm thanh bị lỗi STT -> gửi lại âm thanh
+    if (cachedAudioBlob) {
+      setIsRetrying(true)
+      try {
+        await processAudioSubmission(cachedAudioBlob)
+      } finally {
+        setIsRetrying(false)
+      }
+      return
+    }
+
+    // 2. Nếu có câu trả lời văn bản bị lỗi hoặc AI server gặp sự cố (ENGINE_RETRY)
+    const textToRetry = (retryableText || textInput).trim()
+    if (!textToRetry) return
+
+    setIsRetrying(true)
     try {
-      await processAudioSubmission(cachedAudioBlob)
+      // Khi retry lượt candidate đã lưu trên DB bị FAILED (ENGINE_RETRY),
+      // bắt buộc dùng lại đúng requestId, expectedTurnIndex (của interviewer turn),
+      // và inputMode để backend khớp idempotency (reclaimExisting)
+      const isRetryingFailedTurn = isEngineRetry && lastCandidateTurn?.processingStatus === 'FAILED'
+      const clientTurnId =
+        isRetryingFailedTurn && lastCandidateTurn?.requestId
+          ? lastCandidateTurn.requestId
+          : crypto.randomUUID()
+      const inputMode =
+        isRetryingFailedTurn && lastCandidateTurn?.inputMode === 'VOICE'
+          ? 'VOICE'
+          : 'TEXT'
+      const content =
+        isRetryingFailedTurn && lastCandidateTurn?.content
+          ? lastCandidateTurn.content
+          : textToRetry
+
+      await submitAnswer.mutateAsync({
+        promptTurnId,
+        expectedTurnIndex,
+        content,
+        clientTurnId,
+        expectedVersion: session.version,
+        inputMode,
+      })
+      setFailedTextAnswer(null)
+      setTextInput('')
+      toast.success('Đã gửi lại câu trả lời thành công!')
+    } catch (error) {
+      const rawMsg = getErrorMessage(error)
+      if (rawMsg.includes('INTERVIEW_TURN_OUT_OF_SEQUENCE') || rawMsg.includes('does not match the current interviewer turn')) {
+        void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.session(session.id) })
+      }
+      const friendlyMsg = formatFriendlyError(rawMsg)
+      toast.error('Thử lại chưa thành công: ' + friendlyMsg)
     } finally {
-      setIsRetryingAudio(false)
+      setIsRetrying(false)
     }
   }
 
   async function handleSendText() {
     const content = textInput.trim()
-    if (!content || submitAnswer.isPending || isSubmittingVoice || isEvaluating || isRetryingAudio) return
+    if (!content || submitAnswer.isPending || isSubmittingVoice || isEvaluating || isRetrying) return
 
     stopAllInterviewAudio()
     setIsSubmittingVoice(true)
-    // Người dùng chủ động gửi câu khác -> xóa đoạn ghi âm cũ đang chờ gửi lại
+    // Người dùng chủ động gửi câu khác -> xóa đoạn ghi âm và văn bản lỗi cũ
     setCachedAudioBlob(null)
+    setFailedTextAnswer(null)
 
     try {
       const clientTurnId = crypto.randomUUID()
@@ -208,6 +272,7 @@ export default function InterviewAnswerInput({
       }
       const friendlyMsg = formatFriendlyError(rawMsg)
       setTextInput(content) // phục hồi lại văn bản cho người dùng nếu lỗi
+      setFailedTextAnswer(content) // lưu lại để người dùng có thể bấm nút Thử gửi lại
       toast.error('Không thể gửi câu trả lời: ' + friendlyMsg)
     } finally {
       setIsSubmittingVoice(false)
@@ -302,19 +367,19 @@ export default function InterviewAnswerInput({
   // Khung nhập liệu hợp nhất (Unified capsule input bar kiểu Gemini / ChatGPT)
   return (
     <div className="flex flex-col gap-1.5 w-full">
-      {/* Nút nhỏ góc phải để thử gửi lại đoạn ghi âm vừa rồi nếu có */}
-      {cachedAudioBlob && (
+      {/* Nút nhỏ góc phải để thử gửi lại câu trả lời hoặc đoạn ghi âm vừa rồi nếu có */}
+      {(cachedAudioBlob || retryableText) && (
         <div className="flex justify-end w-full animate-in fade-in-50 duration-150 pr-1">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => void handleRetryAudio()}
-            disabled={isSubmittingVoice || submitAnswer.isPending || isRetryingAudio}
+            onClick={() => void handleRetry()}
+            disabled={isSubmittingVoice || submitAnswer.isPending || isRetrying}
             className="h-7 px-3 text-xs font-medium gap-1.5 rounded-full border-border/80 bg-card text-foreground hover:bg-muted shadow-xs transition-all"
-            title="Thử gửi lại đoạn âm thanh vừa thu"
+            title={cachedAudioBlob ? 'Thử gửi lại đoạn âm thanh vừa thu' : 'Thử gửi lại câu trả lời'}
           >
-            {isRetryingAudio ? (
+            {isRetrying ? (
               <>
                 <Loader2 className="size-3 animate-spin" />
                 <span>Đang gửi lại...</span>
@@ -322,7 +387,7 @@ export default function InterviewAnswerInput({
             ) : (
               <>
                 <RotateCw className="size-3 text-muted-foreground" />
-                <span>Thử lại đoạn ghi âm vừa rồi</span>
+                <span>{cachedAudioBlob ? 'Thử lại đoạn ghi âm vừa rồi' : 'Thử gửi lại câu trả lời'}</span>
               </>
             )}
           </Button>
@@ -347,13 +412,16 @@ export default function InterviewAnswerInput({
             if (cachedAudioBlob) {
               setCachedAudioBlob(null)
             }
+            if (failedTextAnswer) {
+              setFailedTextAnswer(null)
+            }
             e.target.style.height = 'auto'
             e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
           }}
           onKeyDown={handleKeyDown}
-          disabled={isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetryingAudio}
+          disabled={isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetrying}
           placeholder={
-            isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetryingAudio
+            isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetrying
               ? 'AI đang phân tích câu trả lời của bạn...'
               : 'Nhập câu trả lời (hoặc bấm biểu tượng micro để nói)...'
           }
@@ -368,7 +436,7 @@ export default function InterviewAnswerInput({
             variant="ghost"
             size="icon"
             onClick={() => void handleStartRecording()}
-            disabled={isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetryingAudio}
+            disabled={isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetrying}
             className="size-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
             title="Nói trực tiếp qua micro"
           >
@@ -380,7 +448,7 @@ export default function InterviewAnswerInput({
             type="button"
             size="icon"
             onClick={() => void handleSendText()}
-            disabled={!textInput.trim() || isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetryingAudio}
+            disabled={!textInput.trim() || isEvaluating || submitAnswer.isPending || isSubmittingVoice || isRetrying}
             className={cn(
               'size-8 rounded-full transition-all shrink-0 shadow-xs',
               textInput.trim()

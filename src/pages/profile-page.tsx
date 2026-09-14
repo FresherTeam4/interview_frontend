@@ -193,7 +193,6 @@ export default function ProfilePage() {
           <span>
             Đang lưu <strong className="text-foreground">{cvCount}/10</strong> tệp CV trong hệ thống
           </span>
-          <span>Bấm nút xoá để giải phóng dung lượng tải lên</span>
         </div>
         <CvDocumentList
           documents={cvsQuery.data}
@@ -256,11 +255,10 @@ export default function ProfilePage() {
               <FileText className="size-4" />
               Tệp CV đã tải
               <span
-                className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-                  isLimitReached
+                className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${isLimitReached
                     ? 'bg-destructive/15 text-destructive'
                     : 'bg-muted-foreground/15 text-muted-foreground'
-                }`}
+                  }`}
               >
                 {cvCount}/10
               </span>
