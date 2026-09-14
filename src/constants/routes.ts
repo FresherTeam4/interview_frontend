@@ -15,6 +15,10 @@ export const ROUTES = {
   sessionDetail: '/session/:sessionId',
   login: '/login',
   register: '/register',
+  admin: '/admin',
+  adminOverview: '/admin/overview',
+  adminUsers: '/admin/users',
+  adminSessions: '/admin/sessions',
 } as const
 
 export function profileDetailPath(profileId: number): string {

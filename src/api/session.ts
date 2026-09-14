@@ -15,8 +15,10 @@ import type {
   TurnInputMode,
 } from '@/types/session'
 
+import { tokenStorage } from '@/api/token-storage'
 import {
   getStoredSessions,
+  removeStoredSession,
   saveStoredSessionDetail,
   updateStoredSessionSummary,
 } from '@/features/session/services/session-mock-service'
@@ -131,13 +133,18 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
     awaitingAction = 'REPORT'
   }
 
+  const currentUserId = tokenStorage.getUserId()
   // Cập nhật trạng thái mới nhất vào danh sách lưu trữ
-  updateStoredSessionSummary(sessionId, {
-    status: mappedStatus,
-    awaitingAction,
-  })
+  updateStoredSessionSummary(
+    sessionId,
+    {
+      status: mappedStatus,
+      awaitingAction,
+    },
+    currentUserId,
+  )
 
-  const storedSession = getStoredSessions().find((s) => s.id === sessionId)
+  const storedSession = getStoredSessions(currentUserId).find((s) => s.id === sessionId)
   const rawMode = statusData?.mode || storedSession?.mode
   const sessionMode: SessionMode =
     rawMode === 'VOICE_REALTIME' ? 'VOICE_REALTIME' : 'TURN_BASED'
@@ -186,8 +193,21 @@ export async function listSessions(
   scope: SessionListScope = 'ACTIVE',
   page = 0,
   size = 10,
+  userId?: number | null,
 ): Promise<PageResponse<InterviewSessionSummary>> {
-  const all = getStoredSessions()
+  const effectiveUserId = userId ?? tokenStorage.getUserId()
+  if (!effectiveUserId) {
+    return {
+      items: [],
+      totalElements: 0,
+      totalPages: 0,
+      page,
+      size,
+    }
+  }
+
+  let all = getStoredSessions(effectiveUserId)
+  const invalidSessionIds = new Set<number>()
 
   // Đồng bộ trạng thái thực tế từ backend cho danh sách các phiên
   await Promise.allSettled(
@@ -248,19 +268,32 @@ export async function listSessions(
           if (durationMinutes !== undefined) s.durationMinutes = durationMinutes
           if (templateTitle) s.jobDescriptionTitle = templateTitle
           if (profileHeadline) s.profileHeadline = profileHeadline
-          updateStoredSessionSummary(s.id, {
-            status: updatedStatus,
-            overallScore,
-            durationMinutes: s.durationMinutes,
-            jobDescriptionTitle: s.jobDescriptionTitle,
-            profileHeadline: s.profileHeadline,
-          })
+          updateStoredSessionSummary(
+            s.id,
+            {
+              status: updatedStatus,
+              overallScore,
+              durationMinutes: s.durationMinutes,
+              jobDescriptionTitle: s.jobDescriptionTitle,
+              profileHeadline: s.profileHeadline,
+            },
+            effectiveUserId,
+          )
         }
-      } catch {
-        // bỏ qua lỗi nếu không kết nối được
+      } catch (err: unknown) {
+        // Nếu backend trả về 404 hoặc 403, phiên này không thuộc về user hiện tại hoặc không tồn tại
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status === 404 || status === 403) {
+          invalidSessionIds.add(s.id)
+          removeStoredSession(s.id, effectiveUserId)
+        }
       }
     }),
   )
+
+  if (invalidSessionIds.size > 0) {
+    all = all.filter((s) => !invalidSessionIds.has(s.id))
+  }
 
   const filtered = all.filter((s) => {
     if (scope === 'ACTIVE') {

@@ -14,6 +14,8 @@ import {
   submitTextAnswer,
 } from '@/api/session'
 import { QUERY_KEYS } from '@/constants/query-keys'
+import { useAuth } from '@/hooks/use-auth'
+import { tokenStorage } from '@/api/token-storage'
 import type {
   CreateSessionRequest,
   InterviewSession,
@@ -46,9 +48,13 @@ export function useSession(sessionId: number) {
 }
 
 export function useSessions(scope: SessionListScope = 'ACTIVE', page = 0, size = 10) {
+  const { user } = useAuth()
+  const userId = user?.id ?? tokenStorage.getUserId()
+
   return useQuery({
-    queryKey: QUERY_KEYS.sessionList(scope, page, size),
-    queryFn: () => listSessions(scope, page, size),
+    queryKey: QUERY_KEYS.sessionList(userId, scope, page, size),
+    queryFn: () => listSessions(scope, page, size, userId),
+    enabled: !!userId,
   })
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
-import { BotMessageSquare, LogOut } from 'lucide-react'
+import { BotMessageSquare, LogOut, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
@@ -65,6 +65,24 @@ export default function Header() {
         <div className="ml-auto flex items-center gap-3">
           {isAuthenticated ? (
             <>
+              {user?.role === 'ADMIN' && (
+                <NavLink
+                  to={ROUTES.adminOverview}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all border shadow-xs',
+                      isActive
+                        ? 'bg-amber-500 text-white border-amber-600 shadow-amber-500/20'
+                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20',
+                    )
+                  }
+                  title="Truy cập Trang Quản trị hệ thống"
+                >
+                  <ShieldCheck className="size-3.5" />
+                  <span>Quản trị</span>
+                </NavLink>
+              )}
+
               <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border/50">
                 <div className="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px]">
                   {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}

@@ -23,7 +23,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { formatDateTime } from '@/lib/format'
 import { getInterviewTemplate } from '@/api/template'
-import { useArchiveInterviewTemplate } from '@/hooks/use-interview-templates'
+import {
+  useArchiveInterviewTemplate,
+  usePublishInterviewTemplate,
+  useUnpublishInterviewTemplate,
+} from '@/hooks/use-interview-templates'
+import { useAuth } from '@/hooks/use-auth'
+import { ROLES } from '@/constants/roles'
 import { getErrorMessage } from '@/api/api-error'
 import type { InterviewTemplateSummary } from '@/types/template'
 
@@ -35,8 +41,38 @@ interface RoleCardProps {
 }
 
 export default function RoleCard({ role, onViewDetail, onPractice, onArchive }: RoleCardProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.role === ROLES.ADMIN
+
   const archiveMutation = useArchiveInterviewTemplate()
+  const publishMutation = usePublishInterviewTemplate()
+  const unpublishMutation = useUnpublishInterviewTemplate()
   const [isArchiving, setIsArchiving] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+
+  async function handleTogglePublish() {
+    setIsPublishing(true)
+    try {
+      const full = await getInterviewTemplate(role.id)
+      if (role.published) {
+        await unpublishMutation.mutateAsync({
+          id: role.id,
+          expectedVersion: full.version,
+        })
+        toast.success(`Đã chuyển "${role.title}" về trạng thái riêng tư`)
+      } else {
+        await publishMutation.mutateAsync({
+          id: role.id,
+          expectedVersion: full.version,
+        })
+        toast.success(`Đã công khai "${role.title}" cho cộng đồng`)
+      }
+    } catch (err) {
+      toast.error('Cập nhật trạng thái công khai thất bại: ' + getErrorMessage(err))
+    } finally {
+      setIsPublishing(false)
+    }
+  }
 
   async function handleQuickArchive() {
     const confirmed = window.confirm(`Bạn có chắc muốn lưu trữ vị trí "${role.title}"? Vị trí này sẽ được ẩn khỏi danh sách.`)
@@ -118,6 +154,19 @@ export default function RoleCard({ role, onViewDetail, onPractice, onArchive }: 
                 <Play className="size-3.5 fill-current" />
                 Luyện tập vị trí này
               </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => void handleTogglePublish()}
+                    disabled={isPublishing}
+                    className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
+                  >
+                    <Globe className="size-3.5" />
+                    {role.published ? 'Gỡ công khai' : 'Công khai vị trí'}
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => void handleQuickArchive()}

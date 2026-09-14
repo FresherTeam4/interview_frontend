@@ -5,16 +5,31 @@ import type {
   SessionMode,
   Turn,
 } from '@/types/session'
+import { tokenStorage } from '@/api/token-storage'
 
-const STORAGE_KEY = 'mock_interview_sessions_list'
+const LEGACY_STORAGE_KEY = 'mock_interview_sessions_list'
 const DETAIL_KEY_PREFIX = 'mock_session_detail_'
 
-export function getStoredSessions(): InterviewSessionSummary[] {
+function getUserStorageKey(userId?: number | null): string | null {
+  const id = userId ?? tokenStorage.getUserId()
+  if (!id) return null
+  return `mock_interview_sessions_list_user_${id}`
+}
+
+export function getStoredSessions(userId?: number | null): InterviewSessionSummary[] {
   try {
+    // Luôn dọn dẹp key global cũ để tránh rò rỉ phiên giữa các tài khoản khác nhau
+    localStorage.removeItem(LEGACY_STORAGE_KEY)
     localStorage.removeItem('mock_session_detail_101')
     localStorage.removeItem('mock_session_detail_102')
     localStorage.removeItem('mock_session_detail_103')
-    const raw = localStorage.getItem(STORAGE_KEY)
+
+    const storageKey = getUserStorageKey(userId)
+    if (!storageKey) {
+      return []
+    }
+
+    const raw = localStorage.getItem(storageKey)
     if (!raw) {
       return []
     }
@@ -24,11 +39,24 @@ export function getStoredSessions(): InterviewSessionSummary[] {
       (s) => s.id !== 101 && s.id !== 102 && s.id !== 103 && s.id < 1000000000000,
     )
     if (cleaned.length !== list.length) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned))
+      localStorage.setItem(storageKey, JSON.stringify(cleaned))
     }
     return cleaned
   } catch {
     return []
+  }
+}
+
+export function removeStoredSession(sessionId: number, userId?: number | null): void {
+  try {
+    const storageKey = getUserStorageKey(userId)
+    if (!storageKey) return
+    const current = getStoredSessions(userId)
+    const updated = current.filter((s) => s.id !== sessionId)
+    localStorage.setItem(storageKey, JSON.stringify(updated))
+    localStorage.removeItem(`${DETAIL_KEY_PREFIX}${sessionId}`)
+  } catch {
+    // Ignore storage quota errors
   }
 }
 
@@ -60,9 +88,14 @@ export function saveCreatedSession(session: {
   difficulty?: InterviewDifficulty
   mode?: SessionMode
   durationMinutes?: number
+  userId?: number | null
 }): void {
   try {
-    const current = getStoredSessions()
+    const effectiveUserId = session.userId ?? tokenStorage.getUserId()
+    const storageKey = getUserStorageKey(effectiveUserId)
+    if (!storageKey) return
+
+    const current = getStoredSessions(effectiveUserId)
     const duration = session.durationMinutes || 30
     const newSession: InterviewSessionSummary = {
       id: session.id,
@@ -80,7 +113,7 @@ export function saveCreatedSession(session: {
       createdAt: new Date().toISOString(),
     }
     const updated = [newSession, ...current.filter((s) => s.id !== session.id)]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    localStorage.setItem(storageKey, JSON.stringify(updated))
 
     // Khởi tạo chi tiết phiên với lượt mở đầu
     const initialDetail: InterviewSession = {
@@ -134,11 +167,14 @@ export function saveCreatedSession(session: {
 export function updateStoredSessionSummary(
   sessionId: number,
   updates: Partial<InterviewSessionSummary>,
+  userId?: number | null,
 ): void {
   try {
-    const list = getStoredSessions()
+    const storageKey = getUserStorageKey(userId)
+    if (!storageKey) return
+    const list = getStoredSessions(userId)
     const updated = list.map((s) => (s.id === sessionId ? { ...s, ...updates } : s))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    localStorage.setItem(storageKey, JSON.stringify(updated))
   } catch {
     // Ignore storage quota errors
   }

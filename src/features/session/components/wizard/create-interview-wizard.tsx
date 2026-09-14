@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import StepRoleSelector from '@/features/session/components/wizard/step-role-selector'
 import StepConfig from '@/features/session/components/wizard/step-config'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
+import { useAuth } from '@/hooks/use-auth'
 import { confirmCandidateProfile } from '@/api/profile'
 import { confirmInterviewTemplate, getInterviewSessionOptions, getInterviewTemplate } from '@/api/template'
 import { api } from '@/api/client'
@@ -33,6 +34,7 @@ export default function CreateInterviewWizard({
   onSuccess,
 }: CreateInterviewWizardProps = {}) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const profilesQuery = useCandidateProfiles()
   const [currentStep, setCurrentStep] = useState<1 | 2>(initialTemplate ? 2 : 1)
 
@@ -153,6 +155,7 @@ export default function CreateInterviewWizard({
         title: selectedTemplate.title,
         durationMinutes: config.durationMinutes,
         mode: config.mode,
+        userId: user?.id,
       })
 
       toast.info('Đã tạo phiên phỏng vấn. AI đang phân tích CV & JD để thiết lập trọng tâm đánh giá...')

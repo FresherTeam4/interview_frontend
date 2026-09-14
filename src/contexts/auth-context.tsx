@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { getCurrentUser, loginUser, loginWithGoogle, logoutUser, registerUser } from '@/api/auth'
 import { AUTH_EXPIRED_EVENT } from '@/api/client'
 import { tokenStorage } from '@/api/token-storage'
+import { queryClient } from '@/contexts/query-client'
 import { AuthContext } from '@/contexts/auth-context-def'
 import type { AuthContextValue, AuthResponse, LoginRequest, RegisterRequest } from '@/types/auth'
 import type { CurrentUser } from '@/types/api'
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         const hadAccessToken = Boolean(tokenStorage.getAccessToken())
         tokenStorage.clear()
+        queryClient.clear()
         if (hadAccessToken) window.dispatchEvent(new CustomEvent(AUTH_EXPIRED_EVENT))
         if (!cancelled) setUser(null)
       } finally {
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function handleExpired() {
+      queryClient.clear()
       setUser(null)
       setIsInitializing(false)
     }
@@ -52,11 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeLogin = useCallback(async (response: AuthResponse): Promise<AuthResponse> => {
     try {
+      queryClient.clear()
       const currentUser = await getCurrentUser()
       setUser(currentUser)
       return response
     } catch (error) {
       tokenStorage.clear()
+      queryClient.clear()
       setUser(null)
       throw error
     }
@@ -81,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await logoutUser()
     } finally {
+      queryClient.clear()
       setUser(null)
       tokenStorage.clear()
     }

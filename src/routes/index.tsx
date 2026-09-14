@@ -15,6 +15,11 @@ import RolesPage from '@/pages/roles-page'
 import SessionCreatePage from '@/pages/session-create-page'
 import SessionDetailPage from '@/pages/session-detail-page'
 import SessionListPage from '@/pages/session-list-page'
+import AdminGuard from '@/routes/admin-guard'
+import AdminLayout from '@/routes/admin-layout'
+import AdminOverviewPage from '@/pages/admin/admin-overview-page'
+import AdminUsersPage from '@/pages/admin/admin-users-page'
+import AdminSessionsPage from '@/pages/admin/admin-sessions-page'
 import { ROUTES } from '@/constants/routes'
 
 export const router = createBrowserRouter([
@@ -59,6 +64,24 @@ export const router = createBrowserRouter([
           { path: ROUTES.sessionList, element: <SessionListPage /> },
           { path: ROUTES.sessionCreate, element: <SessionCreatePage /> },
           { path: ROUTES.sessionDetail, element: <SessionDetailPage /> },
+
+          // Phân hệ Quản trị hệ thống (Admin Portal)
+          {
+            element: <AdminGuard />,
+            children: [
+              {
+                path: 'admin',
+                element: <AdminLayout />,
+                children: [
+                  { index: true, element: <Navigate to={ROUTES.adminOverview} replace /> },
+                  { path: 'overview', element: <AdminOverviewPage /> },
+                  { path: 'users', element: <AdminUsersPage /> },
+                  { path: 'sessions', element: <AdminSessionsPage /> },
+                ],
+              },
+            ],
+          },
+
           { path: '*', element: <NotFoundPage /> },
         ],
       },

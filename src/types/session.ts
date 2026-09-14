@@ -1,12 +1,16 @@
 export type SessionStatus =
   | 'CREATED'
   | 'SCRIPT_GENERATING'
+  | 'PREPARING'
   | 'READY'
+  | 'PREPARATION_FAILED'
   | 'IN_PROGRESS'
   | 'PAUSED'
   | 'SCORING'
   | 'SCORING_FAILED'
   | 'COMPLETED'
+  | 'CANCELLED'
+  | 'EXPIRED'
   | 'ABANDONED'
   | 'FAILED'
 

@@ -12,8 +12,13 @@ export const QUERY_KEYS = {
     ['interview-templates', scope, page, size] as const,
   interviewTemplate: (id: number) => ['interview-templates', id] as const,
   sessions: ['sessions'] as const,
-  sessionList: (scope: string, page: number, size: number) =>
-    ['sessions', 'list', scope, page, size] as const,
+  sessionList: (userId: number | string | null | undefined, scope: string, page: number, size: number) =>
+    ['sessions', 'list', userId ?? 'anonymous', scope, page, size] as const,
   session: (id: number) => ['sessions', id] as const,
   sessionReport: (id: number) => ['session-reports', id] as const,
+  adminOverview: (days: number) => ['admin', 'overview', days] as const,
+  adminUsers: (params?: unknown) => ['admin', 'users', params] as const,
+  adminUserDetail: (userId: number) => ['admin', 'users', 'detail', userId] as const,
+  adminSessions: (params?: unknown) => ['admin', 'sessions', params] as const,
+  adminSessionDetail: (sessionId: number) => ['admin', 'sessions', 'detail', sessionId] as const,
 }
