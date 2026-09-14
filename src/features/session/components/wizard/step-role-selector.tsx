@@ -23,6 +23,7 @@ import { getInterviewTemplate } from '@/api/template'
 import { getErrorMessage } from '@/api/api-error'
 import { formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/use-debounce'
 import type { InterviewTemplate, InterviewTemplateSummary } from '@/types/template'
 
 interface StepRoleSelectorProps {
@@ -38,6 +39,7 @@ export default function StepRoleSelector({
 }: StepRoleSelectorProps) {
   const [activeTab, setActiveTab] = useState<'mine' | 'public'>('mine')
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearchQuery = useDebounce(searchQuery, 250)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   const mineQuery = useInterviewTemplates('mine', 0, 50)
@@ -48,7 +50,7 @@ export default function StepRoleSelector({
 
   const filteredList = (currentList || []).filter((role) => {
     if (role.archivedAt) return false
-    const q = searchQuery.trim().toLowerCase()
+    const q = debouncedSearchQuery.trim().toLowerCase()
     if (!q) return true
     return (
       role.title?.toLowerCase().includes(q) ||

@@ -103,11 +103,11 @@ export default function StepConfig({
                 <Mic className="size-3.5 text-primary" />
                 Hình thức phỏng vấn
               </label>
-              <div className="grid gap-2.5 sm:grid-cols-3">
+              <div className="grid gap-2.5 sm:grid-cols-2">
                 <div
                   onClick={() => onChangeConfig({ mode: 'VOICE_REALTIME' })}
                   className={cn(
-                    'cursor-pointer p-3 rounded-lg border text-left transition-all space-y-1.5 relative overflow-hidden',
+                    'cursor-pointer p-3.5 rounded-lg border text-left transition-all space-y-2 relative overflow-hidden',
                     config.mode === 'VOICE_REALTIME'
                       ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
                       : 'border-border/80 bg-card/60 hover:border-primary/40',
@@ -115,57 +115,42 @@ export default function StepConfig({
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="size-6 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                        <Radio className="size-3.5 animate-pulse" />
+                      <div className="size-7 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <Radio className="size-4 animate-pulse" />
                       </div>
                       <span className="font-semibold text-xs text-foreground">Giọng nói Realtime</span>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
-                      Gợi ý
+                      Trực tiếp
                     </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Trò chuyện 2 chiều trực tiếp độ trễ thấp, tự động ngắt lời khi nói, không cần bấm micro thủ công.
+                    Trò chuyện 2 chiều trực tiếp độ trễ thấp, đàm thoại tự nhiên liên tục, tự động ngắt lời khi bạn nói.
                   </p>
                 </div>
 
                 <div
-                  onClick={() => onChangeConfig({ mode: 'VOICE_TURN_BASED' })}
+                  onClick={() => onChangeConfig({ mode: 'TURN_BASED' })}
                   className={cn(
-                    'cursor-pointer p-3 rounded-lg border text-left transition-all space-y-1.5',
-                    config.mode === 'VOICE_TURN_BASED'
+                    'cursor-pointer p-3.5 rounded-lg border text-left transition-all space-y-2 relative overflow-hidden',
+                    config.mode === 'TURN_BASED'
                       ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
                       : 'border-border/80 bg-card/60 hover:border-primary/40',
                   )}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Mic className="size-3.5" />
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="size-7 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <MessageSquare className="size-4" />
+                      </div>
+                      <span className="font-semibold text-xs text-foreground">Phỏng vấn theo lượt</span>
                     </div>
-                    <span className="font-semibold text-xs text-foreground">Giọng nói theo lượt</span>
+                    <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full border border-primary/20">
+                      Nói hoặc Nhắn tin
+                    </span>
                   </div>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    AI đọc từng câu hỏi, bạn bấm micro để nói và gửi câu trả lời theo từng lượt đối thoại.
-                  </p>
-                </div>
-
-                <div
-                  onClick={() => onChangeConfig({ mode: 'TEXT' })}
-                  className={cn(
-                    'cursor-pointer p-3 rounded-lg border text-left transition-all space-y-1.5',
-                    config.mode === 'TEXT'
-                      ? 'border-primary ring-2 ring-primary/20 bg-primary/5 shadow-xs'
-                      : 'border-border/80 bg-card/60 hover:border-primary/40',
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="size-6 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                      <Bot className="size-3.5" />
-                    </div>
-                    <span className="font-semibold text-xs text-foreground">AI Chatbot (Văn bản)</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Chat trực tiếp với AI Interviewer qua tin nhắn văn bản. Không dùng micro, không thu âm.
+                    AI đưa câu hỏi theo từng lượt. Bạn có thể linh hoạt bấm thu âm giọng nói hoặc gõ văn bản để trả lời.
                   </p>
                 </div>
               </div>
@@ -283,7 +268,7 @@ export default function StepConfig({
               {template.title} ({template.targetSeniority || 'JUNIOR'})
             </div>
             <div className="text-muted-foreground text-[11px]">
-              {config.durationMinutes} phút · {config.mode === 'TEXT' ? 'Văn bản thuần túy' : 'Giọng nói'} · {config.languageCode === 'vi' ? 'Tiếng Việt' : 'English'}
+              {config.durationMinutes} phút · {config.mode === 'VOICE_REALTIME' ? 'Giọng nói Realtime' : 'Theo lượt'} · {config.languageCode === 'vi' ? 'Tiếng Việt' : 'English'}
             </div>
           </div>
         </div>

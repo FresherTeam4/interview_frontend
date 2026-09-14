@@ -70,4 +70,5 @@ export interface InterviewSessionOptions {
   languages: InterviewOption[]
   durations: number[]
   interviewerStyles: InterviewOption[]
+  modes?: InterviewOption[]
 }

@@ -11,6 +11,8 @@ import type {
   SessionVersionRequest,
   SubmitTextAnswerRequest,
   TextAnswerAccepted,
+  TurnRole,
+  TurnInputMode,
 } from '@/types/session'
 
 import {
@@ -42,11 +44,11 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
       turns: Array<{
         id: number
         turnIndex: number
-        role: 'INTERVIEWER' | 'CANDIDATE'
-        contentText?: string
+        role: TurnRole
+        inputMode?: TurnInputMode
+        action?: string
         content?: string
-        action?: 'OPENING' | 'EXPLORE' | 'FOLLOW_UP' | 'HANDLE_REQUEST' | 'CLOSE'
-        focusAreaCode?: string | null
+        contentText?: string
         requestId?: string | null
         processingStatus?: 'PROCESSING' | 'COMPLETED' | 'FAILED' | null
         processingErrorCode?: string | null
@@ -97,7 +99,7 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
     id: t.id,
     turnIndex: t.turnIndex,
     role: t.role,
-    inputMode: 'TEXT' as const,
+    inputMode: (t.inputMode === ('VOICE_TURN_BASED' as unknown) ? 'VOICE' : t.inputMode) || 'TEXT',
     content: t.content || t.contentText || '',
     isFollowUp: t.action === 'FOLLOW_UP',
     followUpDepth: t.action === 'FOLLOW_UP' ? 1 : 0,
@@ -136,7 +138,9 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
   })
 
   const storedSession = getStoredSessions().find((s) => s.id === sessionId)
-  const sessionMode: SessionMode = statusData?.mode || storedSession?.mode || 'VOICE_TURN_BASED'
+  const rawMode = statusData?.mode || storedSession?.mode
+  const sessionMode: SessionMode =
+    rawMode === 'VOICE_REALTIME' ? 'VOICE_REALTIME' : 'TURN_BASED'
 
   return {
     id: sessionId,
@@ -354,13 +358,14 @@ export async function submitTextAnswer(
     sessionId: number
     status: string
     currentTurnIndex: number
-    candidateTurn?: { id: number; turnIndex: number; content?: string; contentText?: string; createdAt?: string }
-    interviewerTurn?: { id: number; turnIndex: number; content?: string; contentText?: string; createdAt?: string }
+    candidateTurn?: { id: number; turnIndex: number; inputMode?: TurnInputMode; content?: string; contentText?: string; createdAt?: string }
+    interviewerTurn?: { id: number; turnIndex: number; inputMode?: TurnInputMode; content?: string; contentText?: string; createdAt?: string }
   }>(
     `/interview-sessions/${sessionId}/answers`,
     {
       expectedTurnIndex: data.expectedTurnIndex ?? 0,
       answer: data.content,
+      inputMode: data.inputMode || 'TEXT',
     },
     {
       headers: { 'Idempotency-Key': idempotencyKey },
@@ -373,7 +378,7 @@ export async function submitTextAnswer(
         id: res.data.candidateTurn.id,
         turnIndex: res.data.candidateTurn.turnIndex,
         role: 'CANDIDATE' as const,
-        inputMode: 'TEXT' as const,
+        inputMode: (res.data.candidateTurn.inputMode === ('VOICE_TURN_BASED' as unknown) ? 'VOICE' : res.data.candidateTurn.inputMode) || data.inputMode || 'TEXT',
         content: res.data.candidateTurn.content || res.data.candidateTurn.contentText || data.content,
         isFollowUp: false,
         followUpDepth: 0,
@@ -386,7 +391,7 @@ export async function submitTextAnswer(
         id: res.data.interviewerTurn.id,
         turnIndex: res.data.interviewerTurn.turnIndex,
         role: 'INTERVIEWER' as const,
-        inputMode: 'TEXT' as const,
+        inputMode: (res.data.interviewerTurn.inputMode === ('VOICE_TURN_BASED' as unknown) ? 'VOICE' : res.data.interviewerTurn.inputMode) || 'TEXT',
         content: res.data.interviewerTurn.content || res.data.interviewerTurn.contentText || '',
         isFollowUp: false,
         followUpDepth: 0,

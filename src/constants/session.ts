@@ -32,10 +32,11 @@ export const SESSION_IN_PROGRESS_STATUSES: SessionStatus[] = [
   SESSION_STATUS.SCRIPT_GENERATING,
 ]
 
-export const SESSION_MODE_LABEL: Record<SessionMode, string> = {
-  TEXT: 'Văn bản',
-  VOICE_TURN_BASED: 'Giọng nói theo lượt',
+export const SESSION_MODE_LABEL: Record<SessionMode, string> & Record<string, string> = {
+  TURN_BASED: 'Phỏng vấn theo lượt',
   VOICE_REALTIME: 'Giọng nói thời gian thực',
+  TEXT: 'Phỏng vấn theo lượt',
+  VOICE_TURN_BASED: 'Phỏng vấn theo lượt',
 }
 
 export const INTERVIEW_DIFFICULTY_LABEL: Record<InterviewDifficulty, string> = {

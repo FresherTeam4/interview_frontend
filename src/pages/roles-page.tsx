@@ -29,6 +29,7 @@ import { useInterviewTemplates } from '@/hooks/use-interview-templates'
 import { getErrorMessage } from '@/api/api-error'
 import { getInterviewTemplate } from '@/api/template'
 import DataPagination from '@/components/data-pagination'
+import { useDebounce } from '@/hooks/use-debounce'
 import type { InterviewTemplate, InterviewTemplateSummary } from '@/types/template'
 
 const SENIORITIES = ['ALL', 'INTERN', 'FRESHER', 'JUNIOR', 'MIDDLE', 'SENIOR', 'LEAD'] as const
@@ -37,6 +38,7 @@ const PAGE_SIZE = 6
 export default function RolesPage() {
   const [activeTab, setActiveTab] = useState<'mine' | 'public'>('mine')
   const [searchQuery, setSearchQuery] = useState('')
+  const debouncedSearchQuery = useDebounce(searchQuery, 250)
   const [seniorityFilter, setSeniorityFilter] = useState<string>('ALL')
 
   const [minePage, setMinePage] = useState(0)
@@ -57,7 +59,7 @@ export default function RolesPage() {
 
   const filteredRoles = currentList.filter((role) => {
     if (role.archivedAt) return false
-    const q = searchQuery.trim().toLowerCase()
+    const q = debouncedSearchQuery.trim().toLowerCase()
     const matchesSearch =
       !q ||
       role.title?.toLowerCase().includes(q) ||

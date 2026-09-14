@@ -10,14 +10,18 @@ import {
   ExternalLink,
   FolderGit2,
   Lightbulb,
+  Loader2,
   PencilLine,
   ShieldAlert,
   Compass,
   Wrench,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getErrorMessage } from '@/api/api-error'
+import { useConfirmCandidateProfile } from '@/hooks/use-candidate-profile'
 import type { CandidateProfile } from '@/types/profile'
 
 interface ProfileHighlightsProps {
@@ -91,6 +95,17 @@ export default function ProfileHighlights({
   onEditClick,
   onOpenCv,
 }: ProfileHighlightsProps) {
+  const confirmProfile = useConfirmCandidateProfile(profile.id)
+
+  async function handleConfirm() {
+    try {
+      await confirmProfile.mutateAsync()
+      toast.success('Đã xác nhận hồ sơ thành công.')
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    }
+  }
+
   // Phân loại kỹ năng để làm nổi bật các mảng chuyên môn cốt lõi
   const categorizedSkills = {
     languages: [] as string[],
@@ -170,6 +185,21 @@ export default function ProfileHighlights({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {!profile.confirmedAt && (
+                <Button
+                  size="sm"
+                  onClick={() => void handleConfirm()}
+                  disabled={confirmProfile.isPending}
+                  className="gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                >
+                  {confirmProfile.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="size-3.5" />
+                  )}
+                  <span>Xác nhận hồ sơ</span>
+                </Button>
+              )}
               <Button size="sm" variant="outline" onClick={onEditClick} className="gap-1.5 text-xs font-medium">
                 <PencilLine className="size-3.5" />
                 <span>Chỉnh sửa thông tin</span>
@@ -475,6 +505,42 @@ export default function ProfileHighlights({
           </div>
         </CardContent>
       </Card>
+
+      {/* 6. Thanh xác nhận nhanh khi rà soát xong ở cuối trang */}
+      {!profile.confirmedAt && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs text-foreground">
+            <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>
+              Bạn đã rà soát xong điểm nhấn & kỹ năng? Hãy <strong>xác nhận hồ sơ</strong> để mở khóa bắt đầu phỏng vấn thử.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onEditClick}
+              className="gap-1.5 text-xs font-medium"
+            >
+              <PencilLine className="size-3.5" />
+              <span>Chỉnh sửa thêm</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => void handleConfirm()}
+              disabled={confirmProfile.isPending}
+              className="gap-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+            >
+              {confirmProfile.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <CheckCircle2 className="size-3.5" />
+              )}
+              <span>Xác nhận hồ sơ</span>
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -10,7 +10,7 @@ export type SessionStatus =
   | 'ABANDONED'
   | 'FAILED'
 
-export type SessionMode = 'TEXT' | 'VOICE_TURN_BASED' | 'VOICE_REALTIME'
+export type SessionMode = 'TURN_BASED' | 'VOICE_REALTIME'
 
 export type InterviewDifficulty = 'EASY' | 'MEDIUM' | 'HARD'
 
@@ -24,7 +24,7 @@ export type AwaitingAction =
   | 'NONE'
 
 export type TurnRole = 'INTERVIEWER' | 'CANDIDATE'
-export type TurnInputMode = 'TEXT' | 'VOICE_TURN_BASED' | 'VOICE_REALTIME'
+export type TurnInputMode = 'TEXT' | 'VOICE' | 'VOICE_REALTIME'
 
 export type SessionListScope = 'ACTIVE' | 'HISTORY' | 'ALL'
 
@@ -129,6 +129,7 @@ export interface SubmitTextAnswerRequest {
   content: string
   clientTurnId: string
   expectedVersion: number
+  inputMode?: 'TEXT' | 'VOICE'
 }
 
 export interface TextAnswerAccepted {

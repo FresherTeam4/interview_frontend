@@ -26,7 +26,7 @@ import {
   type ProfileFormValues,
 } from '@/features/profile/profile-schema'
 import { getErrorMessage } from '@/api/api-error'
-import { useConfirmCandidateProfile, useUpdateCandidateProfile } from '@/hooks/use-candidate-profile'
+import { useUpdateCandidateProfile } from '@/hooks/use-candidate-profile'
 import { formatDateTime } from '@/lib/format'
 import {
   PROFILE_LIMITS,
@@ -43,7 +43,6 @@ interface ProfileFormProps {
 
 export default function ProfileForm({ profile }: ProfileFormProps) {
   const updateProfile = useUpdateCandidateProfile(profile.id)
-  const confirmProfile = useConfirmCandidateProfile(profile.id)
   const [savedProfile, setSavedProfile] = useState<CandidateProfile | null>(null)
   const currentProfile =
     savedProfile && savedProfile.id === profile.id && savedProfile.version >= profile.version
@@ -56,7 +55,7 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
   })
 
   const { errors, isDirty } = form.formState
-  const isBusy = updateProfile.isPending || confirmProfile.isPending
+  const isBusy = updateProfile.isPending
 
   const handleSave = form.handleSubmit(
     async (values) => {
@@ -73,15 +72,6 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
     },
     () => toast.error('Vui lòng kiểm tra lại các trường được đánh dấu đỏ.'),
   )
-
-  async function handleConfirm() {
-    try {
-      await confirmProfile.mutateAsync()
-      toast.success('Đã xác nhận hồ sơ.')
-    } catch (error) {
-      toast.error(getErrorMessage(error))
-    }
-  }
 
   return (
     <FormProvider {...form}>
@@ -103,15 +93,9 @@ export default function ProfileForm({ profile }: ProfileFormProps) {
             <AlertTitle>Hồ sơ chưa được xác nhận</AlertTitle>
             <AlertDescription>
               {isDirty
-                ? 'Bạn đang có thay đổi chưa lưu. Lưu hồ sơ trước, rồi xác nhận.'
-                : 'Soát lại thông tin AI trích xuất từ CV. Khi đã đúng, bấm xác nhận để mở khoá buổi phỏng vấn.'}
+                ? 'Bạn đang có thay đổi chưa lưu. Lưu hồ sơ trước, rồi chuyển sang tab "Điểm nhấn & Trọng tâm" để xác nhận.'
+                : 'Chỉnh sửa các trường thông tin nếu cần và lưu lại. Khi đã hoàn tất, hãy chuyển sang tab "Điểm nhấn & Trọng tâm" để xác nhận hồ sơ.'}
             </AlertDescription>
-            <div className="col-start-2 mt-2">
-              <Button type="button" size="sm" disabled={isDirty || isBusy} onClick={handleConfirm}>
-                {confirmProfile.isPending ? <Spinner /> : <BadgeCheck className="size-4" />}
-                Thông tin đã đúng
-              </Button>
-            </div>
           </Alert>
         )}
 

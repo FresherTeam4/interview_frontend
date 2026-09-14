@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import JdStatusBadge from '@/features/jd/components/jd-status-badge'
 import { getErrorMessage } from '@/api/api-error'
 import { useConfirmJd, useUpdateJd } from '@/hooks/use-job-descriptions'
-import { JD_STATUS, JD_TITLE_MAX_LENGTH } from '@/constants/jd'
+import { JD_STATUS, JD_TITLE_MAX_LENGTH, JD_MAX_TEXT_CHARACTERS } from '@/constants/jd'
 import { ROUTES } from '@/constants/routes'
 import type { JobDescription } from '@/types/jd'
 
@@ -105,12 +105,20 @@ export default function JdForm({ jd }: JdFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="jd-text">Nội dung JD</Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="jd-text">Nội dung JD</Label>
+            <span className="text-[11px] text-muted-foreground">
+              {confirmedText.length > 0
+                ? `${confirmedText.length.toLocaleString('vi-VN')} / ${JD_MAX_TEXT_CHARACTERS.toLocaleString('vi-VN')} ký tự`
+                : `Tối đa ${JD_MAX_TEXT_CHARACTERS.toLocaleString('vi-VN')} ký tự`}
+            </span>
+          </div>
           <Textarea
             id="jd-text"
             value={confirmedText}
             onChange={(e) => setConfirmedText(e.target.value)}
             disabled={isReady || isBusy}
+            maxLength={JD_MAX_TEXT_CHARACTERS}
             rows={16}
             className="font-mono text-sm max-h-[380px] overflow-y-auto resize-y"
             placeholder="Dán nội dung mô tả công việc vào đây..."

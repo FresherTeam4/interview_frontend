@@ -43,7 +43,7 @@ export interface RealtimeEvent {
 
 export interface DisconnectRealtimeResult {
   connectionId: number
-  sessionMode: 'VOICE_REALTIME' | 'VOICE_TURN_BASED'
+  sessionMode: 'VOICE_REALTIME' | 'TURN_BASED'
   disconnectedAt: string
   fellBackToTurnBased: boolean
 }

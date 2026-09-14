@@ -17,6 +17,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { createFileJd, createTextJd, getJobDescription } from '@/api/jd'
 import { getInterviewTemplate, updateInterviewTemplate } from '@/api/template'
 import { getErrorMessage } from '@/api/api-error'
+import { JD_MAX_TEXT_CHARACTERS } from '@/constants/jd'
 
 interface CreateRoleDialogProps {
   trigger?: React.ReactNode
@@ -257,10 +258,15 @@ export default function CreateRoleDialog({ trigger, onSuccess }: CreateRoleDialo
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     disabled={isSubmitting}
+                    maxLength={JD_MAX_TEXT_CHARACTERS}
                     className="min-h-[140px] max-h-[260px] overflow-y-auto resize-y text-xs font-sans leading-relaxed"
                   />
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
-                    <span>{text.length > 0 ? `${text.length.toLocaleString('vi-VN')} ký tự` : 'Chưa nhập nội dung'}</span>
+                    <span>
+                      {text.length > 0
+                        ? `${text.length.toLocaleString('vi-VN')} / ${JD_MAX_TEXT_CHARACTERS.toLocaleString('vi-VN')} ký tự`
+                        : `Tối đa ${JD_MAX_TEXT_CHARACTERS.toLocaleString('vi-VN')} ký tự`}
+                    </span>
                     {text.length > 0 && !isSubmitting && (
                       <button
                         type="button"

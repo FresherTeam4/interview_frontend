@@ -71,7 +71,7 @@ export function saveCreatedSession(session: {
       jobDescriptionId: session.id,
       jobDescriptionTitle: session.title,
       difficulty: session.difficulty || 'MEDIUM',
-      mode: session.mode || 'VOICE_TURN_BASED',
+      mode: session.mode || 'TURN_BASED',
       durationMinutes: duration,
       status: 'READY',
       awaitingAction: 'START_SESSION',
@@ -88,7 +88,7 @@ export function saveCreatedSession(session: {
       profile: { id: session.profileId, headline: session.profileHeadline || 'Ứng viên tiềm năng' },
       jobDescription: { id: session.id, title: session.title },
       difficulty: session.difficulty || 'MEDIUM',
-      mode: session.mode || 'VOICE_TURN_BASED',
+      mode: session.mode || 'TURN_BASED',
       languageCode: 'vi',
       durationMinutes: duration,
       deadlineAt: new Date(Date.now() + duration * 60 * 1000).toISOString(),
@@ -205,44 +205,42 @@ export function appendMockCandidateAnswer(
   sessionId: number,
   candidateAnswer: string,
 ): InterviewSession {
-  let session = getStoredSessionDetail(sessionId)
-  if (!session) {
-    session = {
-      id: sessionId,
-      profile: { id: 1, headline: 'Ứng viên tiềm năng' },
-      jobDescription: { id: sessionId, title: 'Vị trí công việc' },
-      difficulty: 'MEDIUM',
-      mode: 'TEXT',
-      languageCode: 'vi',
-      durationMinutes: 30,
-      deadlineAt: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
-      remainingSeconds: 25 * 60,
-      currentTurnIndex: 0,
-      status: 'IN_PROGRESS',
-      awaitingAction: 'CANDIDATE_ANSWER',
-      version: 1,
-      currentPrompt: null,
-      turns: [
-        {
-          id: 1,
-          turnIndex: 0,
-          role: 'INTERVIEWER',
-          inputMode: 'TEXT',
-          content:
-            'Chào bạn! Để bắt đầu buổi phỏng vấn hôm nay, bạn hãy chia sẻ ngắn gọn về bản thân, cũng như dự án thực tế tiêu biểu nhất trong CV mà bạn tự hào nhất nhé?',
-          isFollowUp: false,
-          followUpDepth: 0,
-          createdAt: new Date(Date.now() - 60000).toISOString(),
-        },
-      ],
-      voiceDraft: null,
-      statusMessage: null,
-      lastActivityAt: new Date().toISOString(),
-      startedAt: new Date(Date.now() - 60000).toISOString(),
-      completedAt: null,
-      createdAt: new Date(Date.now() - 120000).toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+  const existingSession = getStoredSessionDetail(sessionId)
+  const session: InterviewSession = existingSession ?? {
+    id: sessionId,
+    profile: { id: 1, headline: 'Ứng viên tiềm năng' },
+    jobDescription: { id: sessionId, title: 'Vị trí công việc' },
+    difficulty: 'MEDIUM',
+    mode: 'TURN_BASED',
+    languageCode: 'vi',
+    durationMinutes: 30,
+    deadlineAt: new Date(Date.now() + 25 * 60 * 1000).toISOString(),
+    remainingSeconds: 25 * 60,
+    currentTurnIndex: 0,
+    status: 'IN_PROGRESS',
+    awaitingAction: 'CANDIDATE_ANSWER',
+    version: 1,
+    currentPrompt: null,
+    turns: [
+      {
+        id: 1,
+        turnIndex: 0,
+        role: 'INTERVIEWER',
+        inputMode: 'TEXT',
+        content:
+          'Chào bạn! Để bắt đầu buổi phỏng vấn hôm nay, bạn hãy chia sẻ ngắn gọn về bản thân, cũng như dự án thực tế tiêu biểu nhất trong CV mà bạn tự hào nhất nhé?',
+        isFollowUp: false,
+        followUpDepth: 0,
+        createdAt: new Date(Date.now() - 60000).toISOString(),
+      },
+    ],
+    voiceDraft: null,
+    statusMessage: null,
+    lastActivityAt: new Date().toISOString(),
+    startedAt: new Date(Date.now() - 60000).toISOString(),
+    completedAt: null,
+    createdAt: new Date(Date.now() - 120000).toISOString(),
+    updatedAt: new Date().toISOString(),
   }
 
   const turns = [...session.turns]

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { useDebounce } from '@/hooks/use-debounce'
 import type { InterviewTemplate } from '@/types/template'
 
 interface TemplateCardSelectorProps {
@@ -18,9 +19,10 @@ export default function TemplateCardSelector({
   onSelect,
 }: TemplateCardSelectorProps) {
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 250)
 
   const filteredTemplates = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = debouncedSearch.trim().toLowerCase()
     if (!query) return templates
     return templates.filter((t) => {
       const matchTitle = t.title?.toLowerCase().includes(query)
@@ -29,7 +31,7 @@ export default function TemplateCardSelector({
       const matchSkills = t.content?.keySkills?.some((s) => s.name.toLowerCase().includes(query))
       return matchTitle || matchJob || matchSeniority || matchSkills
     })
-  }, [templates, search])
+  }, [templates, debouncedSearch])
 
   return (
     <div className="space-y-4">

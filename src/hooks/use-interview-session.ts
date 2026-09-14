@@ -118,7 +118,7 @@ export function useSubmitTextAnswer(sessionId: number) {
           id: Date.now(),
           turnIndex: (previousSession.currentTurnIndex ?? 0) + 1,
           role: 'CANDIDATE',
-          inputMode: 'TEXT',
+          inputMode: newAnswer.inputMode || 'TEXT',
           content: newAnswer.content,
           isFollowUp: false,
           followUpDepth: 0,

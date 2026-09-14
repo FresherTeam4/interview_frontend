@@ -175,7 +175,7 @@ export default function DashboardPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {session.profileHeadline || 'Hồ sơ'} ·{' '}
-                        {session.mode === 'TEXT' ? 'Phỏng vấn Văn bản' : 'Phỏng vấn Giọng nói'} ·{' '}
+                        {SESSION_MODE_LABEL[session.mode] || session.mode} ·{' '}
                         {session.durationMinutes ? `${session.durationMinutes} phút` : '30 phút'} ·{' '}
                         {new Date(session.lastActivityAt || session.createdAt).toLocaleDateString('vi-VN')}
                       </p>

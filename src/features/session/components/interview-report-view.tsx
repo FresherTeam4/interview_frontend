@@ -373,9 +373,7 @@ export default function InterviewReportView({
                     'text-[11px] font-medium py-0 h-5',
                     session.mode === 'VOICE_REALTIME'
                       ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-                      : session.mode === 'VOICE_TURN_BASED'
-                        ? 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10'
-                        : 'border-primary/25 text-primary bg-primary/5',
+                      : 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10',
                   )}
                 >
                   {SESSION_MODE_LABEL[session.mode] || session.mode}

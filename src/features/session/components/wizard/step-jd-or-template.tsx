@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { createFileJd, createTextJd, getJobDescription } from '@/api/jd'
 import { getInterviewTemplate } from '@/api/template'
 import { getErrorMessage } from '@/api/api-error'
+import { JD_MAX_TEXT_CHARACTERS } from '@/constants/jd'
 import type { InterviewTemplate } from '@/types/template'
 
 interface StepJdOrTemplateProps {
@@ -215,10 +216,15 @@ export default function StepJdOrTemplate({
                 value={jdText}
                 onChange={(e) => setJdText(e.target.value)}
                 disabled={isProcessing}
+                maxLength={JD_MAX_TEXT_CHARACTERS}
                 className="min-h-[140px] max-h-[260px] overflow-y-auto resize-y text-xs font-sans leading-relaxed"
               />
               <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
-                <span>{jdText.length > 0 ? `${jdText.length.toLocaleString('vi-VN')} ký tự` : 'Chưa nhập nội dung'}</span>
+                <span>
+                  {jdText.length > 0
+                    ? `${jdText.length.toLocaleString('vi-VN')} / ${JD_MAX_TEXT_CHARACTERS.toLocaleString('vi-VN')} ký tự`
+                    : `Tối đa ${JD_MAX_TEXT_CHARACTERS.toLocaleString('vi-VN')} ký tự`}
+                </span>
                 {jdText.length > 0 && !isProcessing && (
                   <button
                     type="button"
