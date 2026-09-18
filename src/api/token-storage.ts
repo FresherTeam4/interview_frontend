@@ -1,5 +1,13 @@
+import { jwtDecode } from 'jwt-decode'
 import type { AuthTokens } from '@/types/auth'
 import { STORAGE_KEYS } from '@/constants/storage-keys'
+
+interface TokenPayload {
+  userId?: number
+  sub?: string
+  exp?: number
+  role?: string
+}
 
 export const tokenStorage = {
   getAccessToken: () => localStorage.getItem(STORAGE_KEYS.accessToken),
@@ -8,19 +16,22 @@ export const tokenStorage = {
     try {
       const token = localStorage.getItem(STORAGE_KEYS.accessToken)
       if (!token) return null
-      const parts = token.split('.')
-      if (parts.length < 2) return null
-      const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join(''),
-      )
-      const payload = JSON.parse(jsonPayload)
+      const payload = jwtDecode<TokenPayload>(token)
       return typeof payload.userId === 'number' ? payload.userId : null
     } catch {
       return null
+    }
+  },
+
+  isTokenExpired: (): boolean => {
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.accessToken)
+      if (!token) return true
+      const payload = jwtDecode<TokenPayload>(token)
+      if (!payload.exp) return false
+      return payload.exp * 1000 < Date.now()
+    } catch {
+      return true
     }
   },
 

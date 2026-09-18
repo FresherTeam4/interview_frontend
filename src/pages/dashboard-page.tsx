@@ -11,6 +11,7 @@ import { useSessions } from '@/hooks/use-interview-session'
 import { useInterviewTemplates } from '@/hooks/use-interview-templates'
 import { ROUTES, sessionDetailPath, profileDetailPath } from '@/constants/routes'
 import { SESSION_MODE_LABEL, SESSION_STATUS_LABEL } from '@/constants/session'
+import { formatDate } from '@/lib/format'
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -177,7 +178,7 @@ export default function DashboardPage() {
                         {session.profileHeadline || 'Hồ sơ'} ·{' '}
                         {SESSION_MODE_LABEL[session.mode] || session.mode} ·{' '}
                         {session.durationMinutes ? `${session.durationMinutes} phút` : '30 phút'} ·{' '}
-                        {new Date(session.lastActivityAt || session.createdAt).toLocaleDateString('vi-VN')}
+                        {formatDate(session.lastActivityAt || session.createdAt)}
                       </p>
                     </div>
                     <Button size="sm" asChild className="shrink-0 gap-1 text-xs h-8">

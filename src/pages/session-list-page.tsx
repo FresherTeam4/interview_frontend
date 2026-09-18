@@ -18,6 +18,7 @@ import {
   SESSION_MODE_LABEL,
   SESSION_STATUS_LABEL,
 } from '@/constants/session'
+import { formatDate } from '@/lib/format'
 import type { InterviewSessionSummary, SessionListScope } from '@/types/session'
 
 const PAGE_SIZE = 6
@@ -86,11 +87,7 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
           <div className="truncate">
             <span>Thời gian: </span>
             <strong className="text-foreground font-medium">
-              {new Date(session.createdAt).toLocaleDateString('vi-VN', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-              })}
+              {formatDate(session.createdAt)}
             </strong>
           </div>
         </div>
@@ -248,23 +245,23 @@ export default function SessionListPage() {
         }
       />
 
-      <Tabs value={scope} onValueChange={(v) => setScope(v as SessionListScope)}>
-        <TabsList className="grid w-full grid-cols-2 max-w-xs">
-          <TabsTrigger value="ACTIVE" className="gap-1.5">
+      <Tabs value={scope} onValueChange={(val) => setScope(val as SessionListScope)}>
+        <TabsList className="grid w-full grid-cols-2 sm:w-[320px]">
+          <TabsTrigger value="ACTIVE" className="gap-1.5 text-xs">
             <Clock className="size-3.5" />
-            Đang diễn ra
+            Đang hoạt động
           </TabsTrigger>
-          <TabsTrigger value="HISTORY" className="gap-1.5">
+          <TabsTrigger value="HISTORY" className="gap-1.5 text-xs">
             <History className="size-3.5" />
-            Lịch sử
+            Lịch sử đã xong
           </TabsTrigger>
         </TabsList>
 
-        <div className="pt-4">
-          <TabsContent value="ACTIVE">
+        <div className="mt-6">
+          <TabsContent value="ACTIVE" className="m-0">
             <SessionTabContent scope="ACTIVE" />
           </TabsContent>
-          <TabsContent value="HISTORY">
+          <TabsContent value="HISTORY" className="m-0">
             <SessionTabContent scope="HISTORY" />
           </TabsContent>
         </div>

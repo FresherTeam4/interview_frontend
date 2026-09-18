@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { stopAllInterviewAudio } from '@/hooks/use-turn-audio-player'
+import { stopAllInterviewAudio } from '@/lib/audio-bus'
+import { formatDurationSeconds } from '@/lib/format'
 
 interface UseAudioRecorderResult {
   isRecording: boolean
@@ -11,12 +12,6 @@ interface UseAudioRecorderResult {
   stopRecording: () => Promise<Blob | null>
   cancelRecording: () => void
   error: string | null
-}
-
-function formatTime(totalSeconds: number): string {
-  const mins = Math.floor(totalSeconds / 60)
-  const secs = totalSeconds % 60
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 function getBestAudioMimeType(): string {
@@ -123,80 +118,73 @@ export function useAudioRecorder(): UseAudioRecorderResult {
       }
 
       mediaRecorder.onstop = () => {
-        const tracks = streamRef.current?.getTracks()
-        tracks?.forEach((t) => t.stop())
-        streamRef.current = null
-
+        const mime = mediaRecorder.mimeType || 'audio/webm'
+        const audioBlob = new Blob(audioChunksRef.current, { type: mime })
+        if (stopResolverRef.current) {
+          stopResolverRef.current(audioBlob)
+          stopResolverRef.current = null
+        }
         if (timerRef.current) {
           clearInterval(timerRef.current)
           timerRef.current = null
         }
-        setIsRecording(false)
-
-        if (stopResolverRef.current) {
-          if (audioChunksRef.current.length > 0) {
-            const finalBlob = new Blob(audioChunksRef.current, {
-              type: mediaRecorder.mimeType || 'audio/webm',
-            })
-            stopResolverRef.current(finalBlob)
-          } else {
-            stopResolverRef.current(null)
-          }
-          stopResolverRef.current = null
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop())
+          streamRef.current = null
         }
+        setIsRecording(false)
       }
 
-      // Setup real-time audio analysis for voice activity & sound wave
+      // Khởi tạo AnalyserNode để phân tích âm lượng và phát hiện giọng nói
       try {
-        const AudioContextClass =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-        if (AudioContextClass) {
-          const audioContext = new AudioContextClass()
-          audioContextRef.current = audioContext
+        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+        const analyser = audioCtx.createAnalyser()
+        analyser.fftSize = 64
+        analyser.smoothingTimeConstant = 0.4
+        const source = audioCtx.createMediaStreamSource(stream)
+        source.connect(analyser)
 
-          const analyser = audioContext.createAnalyser()
-          analyser.fftSize = 64
-          analyser.smoothingTimeConstant = 0.5
-          analyserRef.current = analyser
+        audioContextRef.current = audioCtx
+        analyserRef.current = analyser
+        sourceRef.current = source
 
-          const source = audioContext.createMediaStreamSource(stream)
-          sourceRef.current = source
-          source.connect(analyser)
+        const dataArray = new Uint8Array(analyser.frequencyBinCount)
 
-          const bufferLength = analyser.frequencyBinCount
-          const dataArray = new Uint8Array(bufferLength)
+        const updateAudioData = () => {
+          if (!analyserRef.current) return
+          analyserRef.current.getByteFrequencyData(dataArray)
 
-          const analyze = () => {
-            if (!analyserRef.current) return
+          let sum = 0
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i]
+          }
+          const average = sum / dataArray.length
+          const normalizedAverage = Math.min(1, average / 128)
 
-            analyserRef.current.getByteFrequencyData(dataArray)
+          // Ngưỡng phát hiện người dùng đang nói
+          setIsSpeaking(normalizedAverage > 0.15)
 
-            // Compute overall amplitude
-            let sum = 0
-            for (let i = 0; i < bufferLength; i++) {
-              sum += dataArray[i]
+          // Chia làm 7 dải tần để vẽ visualization
+          const barCount = 7
+          const step = Math.floor(dataArray.length / barCount) || 1
+          const levels: number[] = []
+
+          for (let i = 0; i < barCount; i++) {
+            let barSum = 0
+            const count = Math.min(step, dataArray.length - i * step)
+            for (let j = 0; j < count; j++) {
+              barSum += dataArray[i * step + j]
             }
-            const avg = sum / bufferLength
-
-            // Speaking threshold
-            const speaking = avg > 10
-            setIsSpeaking(speaking)
-
-            // Sample 7 frequency bands
-            const step = Math.max(1, Math.floor(bufferLength / 7))
-            const levels = [0, 1, 2, 3, 4, 5, 6].map((i) => {
-              const val = dataArray[Math.min(bufferLength - 1, i * step)] || 0
-              return Math.min(1, Math.max(0.15, val / 150))
-            })
-
-            setAudioLevels(speaking ? levels : DEFAULT_AUDIO_LEVELS)
-
-            rafRef.current = requestAnimationFrame(analyze)
+            const barAvg = count > 0 ? barSum / count : 0
+            const val = Math.max(0.1, Math.min(1, barAvg / 180))
+            levels.push(val)
           }
 
-          rafRef.current = requestAnimationFrame(analyze)
+          setAudioLevels(levels)
+          rafRef.current = requestAnimationFrame(updateAudioData)
         }
+
+        rafRef.current = requestAnimationFrame(updateAudioData)
       } catch (analyserErr) {
         console.warn('Audio analyser init failed:', analyserErr)
       }
@@ -265,7 +253,7 @@ export function useAudioRecorder(): UseAudioRecorderResult {
   return {
     isRecording,
     duration,
-    formattedDuration: formatTime(duration),
+    formattedDuration: formatDurationSeconds(duration),
     isSpeaking,
     audioLevels,
     startRecording,

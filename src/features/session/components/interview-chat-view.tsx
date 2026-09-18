@@ -3,6 +3,7 @@ import { Loader2, Square, Volume2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTurnAudioPlayer } from '@/hooks/use-turn-audio-player'
 import { cn } from '@/lib/utils'
+import { formatTime } from '@/lib/format'
 import type { SessionMode, Turn } from '@/types/session'
 
 interface InterviewChatViewProps {
@@ -102,12 +103,7 @@ export default function InterviewChatView({
                 <span className="font-semibold text-foreground">
                   {isInterviewer ? 'Người phỏng vấn (AI)' : 'Bạn'}
                 </span>
-                <span>
-                  {new Date(turn.createdAt).toLocaleTimeString('vi-VN', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
+                <span>{formatTime(turn.createdAt)}</span>
 
                 {isInterviewer && turn.id && sessionMode === 'TURN_BASED' ? (
                   <Button
@@ -173,7 +169,7 @@ export default function InterviewChatView({
         )
       })}
 
-      {/* AI Thinking Indicator (Image 2 style: clean compact bubble with 3 jumping dots) */}
+      {/* AI Thinking Indicator */}
       {isEvaluating && (
         <div className="flex gap-3 max-w-[90%] sm:max-w-[80%] self-start animate-in fade-in-50 duration-200">
           {/* Avatar */}
@@ -206,4 +202,3 @@ export default function InterviewChatView({
     </div>
   )
 }
-

@@ -3,20 +3,32 @@ class Pcm16CaptureProcessor extends AudioWorkletProcessor {
     super();
     this.targetSampleRate = options.processorOptions?.targetSampleRate ?? 16000;
     this.chunkSamples = options.processorOptions?.chunkSamples ?? 320;
+    this.ratio = sampleRate / this.targetSampleRate;
     this.phase = 0;
+    this.lastInput = 0;
     this.pending = [];
   }
 
   process(inputs) {
     const input = inputs[0]?.[0];
-    if (!input) return true;
-    for (let index = 0; index < input.length; index++) {
-      this.phase += this.targetSampleRate;
-      if (this.phase < sampleRate) continue;
-      this.phase -= sampleRate;
-      const sample = Math.max(-1, Math.min(1, input[index]));
-      this.pending.push(sample < 0 ? sample * 32768 : sample * 32767);
-      if (this.pending.length === this.chunkSamples) this.flush();
+    if (!input || input.length === 0) return true;
+
+    // Linear interpolation resampling: produces clean, anti-aliased audio for AI transcription
+    for (let i = 0; i < input.length; i++) {
+      const current = input[i];
+      while (this.phase < 1.0) {
+        const interp = this.lastInput + (current - this.lastInput) * this.phase;
+        const clamped = Math.max(-1, Math.min(1, interp));
+        const pcm16 = clamped < 0 ? Math.round(clamped * 32768) : Math.round(clamped * 32767);
+        this.pending.push(pcm16);
+
+        if (this.pending.length >= this.chunkSamples) {
+          this.flush();
+        }
+        this.phase += this.ratio;
+      }
+      this.phase -= 1.0;
+      this.lastInput = current;
     }
     return true;
   }

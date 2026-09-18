@@ -2,18 +2,15 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { getInterviewerTurnAudio } from '@/api/speech'
 import { getErrorMessage } from '@/api/api-error'
 import { toast } from 'sonner'
+import { audioBus, stopAllInterviewAudio } from '@/lib/audio-bus'
+
+export { stopAllInterviewAudio }
 
 interface UseTurnAudioPlayerResult {
   playingTurnId: number | null
   loadingTurnId: number | null
   playTurn: (turnId: number) => Promise<void>
   stopAudio: () => void
-}
-
-export function stopAllInterviewAudio() {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('interview:stop-audio'))
-  }
 }
 
 export function useTurnAudioPlayer(sessionId: number): UseTurnAudioPlayerResult {
@@ -33,22 +30,19 @@ export function useTurnAudioPlayer(sessionId: number): UseTurnAudioPlayerResult 
     setLoadingTurnId(null)
   }, [])
 
-  // Listen to global stop audio event
+  // Listen to global stop audio via coordinated audio bus
   useEffect(() => {
-    const handleStop = () => stopAudio()
-    window.addEventListener('interview:stop-audio', handleStop)
-    return () => {
-      window.removeEventListener('interview:stop-audio', handleStop)
-    }
+    return audioBus.subscribe(stopAudio)
   }, [stopAudio])
 
   // Cleanup on unmount
   useEffect(() => {
+    const audioCache = audioCacheRef.current
     return () => {
       stopAudio()
       // Revoke all created object URLs to prevent memory leaks
-      audioCacheRef.current.forEach((url) => URL.revokeObjectURL(url))
-      audioCacheRef.current.clear()
+      audioCache.forEach((url) => URL.revokeObjectURL(url))
+      audioCache.clear()
     }
   }, [stopAudio])
 

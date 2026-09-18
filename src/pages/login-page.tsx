@@ -6,7 +6,7 @@ import type { LoginFieldErrors } from '@/features/auth/components/login-form'
 import { useAuth } from '@/hooks/use-auth'
 import { isApiError } from '@/api/api-error'
 import { ROUTES } from '@/constants/routes'
-import { validateEmail, validatePassword } from '@/lib/validation'
+import { loginSchema } from '@/lib/validation'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -15,21 +15,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
-
-  function validate(formData: FormData): boolean {
-    const errors: LoginFieldErrors = {}
-    const email = (formData.get('email') as string) ?? ''
-    const password = (formData.get('password') as string) ?? ''
-
-    const emailErr = validateEmail(email)
-    if (emailErr) errors.email = emailErr
-
-    const passwordErr = validatePassword(password)
-    if (passwordErr) errors.password = passwordErr
-
-    setFieldErrors(errors)
-    return Object.keys(errors).length === 0
-  }
 
   function handleFieldChange(field: keyof LoginFieldErrors) {
     if (fieldErrors[field]) {
@@ -42,15 +27,27 @@ export default function LoginPage() {
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    if (!validate(formData)) return
+    const rawData = {
+      email: ((formData.get('email') as string) ?? '').trim(),
+      password: (formData.get('password') as string) ?? '',
+    }
 
-    const email = (formData.get('email') as string).trim()
-    const password = formData.get('password') as string
+    const result = loginSchema.safeParse(rawData)
+    if (!result.success) {
+      const errors: LoginFieldErrors = {}
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof LoginFieldErrors
+        if (field && !errors[field]) errors[field] = issue.message
+      }
+      setFieldErrors(errors)
+      return
+    }
 
+    setFieldErrors({})
     setIsLoading(true)
 
     try {
-      await login({ email, password })
+      await login(result.data)
       toast.success('Đăng nhập thành công!')
       navigate(ROUTES.home, { replace: true })
     } catch (err) {
