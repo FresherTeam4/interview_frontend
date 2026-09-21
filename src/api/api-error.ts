@@ -25,12 +25,22 @@ export function normalizeError(error: unknown): ApiError {
 
   const { status, data } = error.response
   const body = (data ?? {}) as ApiErrorResponse
+  const fields = body.fields ?? body.fieldErrors
+
+  let message = body.message ?? defaultMessageFor(status)
+  if (fields && Object.keys(fields).length > 0) {
+    message = Object.values(fields).join('. ')
+  }
+
+  if (body.code === 'CV_LIMIT_REACHED' || message?.includes('You can keep at most')) {
+    message = 'Bạn đã đạt giới hạn tối đa 10 CV. Vui lòng chuyển sang tab "Tệp CV đã tải" để xoá bớt CV cũ hoặc tệp lỗi.'
+  }
 
   return {
     status,
     code: body.code ?? `HTTP_${status}`,
-    message: body.message ?? defaultMessageFor(status),
-    fieldErrors: body.fieldErrors,
+    message,
+    fieldErrors: fields,
   }
 }
 
@@ -46,11 +56,26 @@ function defaultMessageFor(status: number): string {
       return 'Không tìm thấy dữ liệu.'
     case 409:
       return 'Dữ liệu đã tồn tại hoặc đang xung đột.'
+    case 413:
+      return 'File vượt quá dung lượng cho phép.'
+    case 415:
+      return 'Định dạng file không được hỗ trợ.'
     case 422:
       return 'Dữ liệu không hợp lệ.'
     default:
       return status >= 500 ? 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.' : 'Đã có lỗi xảy ra.'
   }
+}
+
+/** Lấy thông điệp hiển thị được từ bất kỳ lỗi nào (API hoặc lỗi lạ). */
+export function getErrorMessage(error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): string {
+  if (isApiError(error)) {
+    if (error.fieldErrors && Object.keys(error.fieldErrors).length > 0) {
+      return Object.values(error.fieldErrors).join('. ')
+    }
+    return error.message
+  }
+  return error instanceof Error ? error.message : fallback
 }
 
 export function isApiError(error: unknown): error is ApiError {

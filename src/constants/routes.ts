@@ -1,6 +1,40 @@
 export const ROUTES = {
-  home: '/',
-  about: '/about',
+  home: '/dashboard',
+  dashboard: '/dashboard',
+  cv: '/cv',
+  profile: '/profile',
+  /** Mẫu route cho react-router; dùng {@link profileDetailPath} để dựng link thật. */
+  profileDetail: '/profile/:profileId',
+  roles: '/roles',
+  jd: '/jd',
+  jdCreate: '/jd/create',
+  /** Mẫu route cho react-router; dùng {@link jdDetailPath} để dựng link thật. */
+  jdDetail: '/jd/:jobDescriptionId',
+  sessionList: '/sessions',
+  sessionCreate: '/session/create',
+  sessionDetail: '/session/:sessionId',
+  settings: '/settings',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
+  verifyEmail: '/verify-email',
+  admin: '/admin',
+  adminOverview: '/admin/overview',
+  adminUsers: '/admin/users',
+  adminSessions: '/admin/sessions',
+  adminTemplates: '/admin/templates',
 } as const
+
+
+export function profileDetailPath(profileId: number): string {
+  return `/profile/${profileId}`
+}
+
+export function jdDetailPath(jobDescriptionId: number): string {
+  return `/jd/${jobDescriptionId}`
+}
+
+export function sessionDetailPath(sessionId: number): string {
+  return `/session/${sessionId}`
+}

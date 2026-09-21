@@ -6,12 +6,7 @@ import type { SignupFieldErrors } from '@/features/auth/components/signup-form'
 import { useAuth } from '@/hooks/use-auth'
 import { isApiError } from '@/api/api-error'
 import { ROUTES } from '@/constants/routes'
-import {
-  validateFullName,
-  validateEmail,
-  validatePassword,
-  validateConfirmPassword,
-} from '@/lib/validation'
+import { signupSchema } from '@/lib/validation'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -20,29 +15,6 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<SignupFieldErrors>({})
-
-  function validate(formData: FormData): boolean {
-    const errors: SignupFieldErrors = {}
-    const fullName = (formData.get('fullName') as string) ?? ''
-    const email = (formData.get('email') as string) ?? ''
-    const password = (formData.get('password') as string) ?? ''
-    const confirmPassword = (formData.get('confirmPassword') as string) ?? ''
-
-    const fullNameErr = validateFullName(fullName)
-    if (fullNameErr) errors.fullName = fullNameErr
-
-    const emailErr = validateEmail(email)
-    if (emailErr) errors.email = emailErr
-
-    const passwordErr = validatePassword(password)
-    if (passwordErr) errors.password = passwordErr
-
-    const confirmErr = validateConfirmPassword(password, confirmPassword)
-    if (confirmErr) errors.confirmPassword = confirmErr
-
-    setFieldErrors(errors)
-    return Object.keys(errors).length === 0
-  }
 
   function handleFieldChange(field: keyof SignupFieldErrors) {
     if (fieldErrors[field]) {
@@ -55,15 +27,33 @@ export default function RegisterPage() {
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    if (!validate(formData)) return
+    const rawData = {
+      fullName: ((formData.get('fullName') as string) ?? '').trim(),
+      email: ((formData.get('email') as string) ?? '').trim(),
+      password: (formData.get('password') as string) ?? '',
+      confirmPassword: (formData.get('confirmPassword') as string) ?? '',
+    }
 
-    const fullName = (formData.get('fullName') as string).trim()
-    const email = (formData.get('email') as string).trim()
-    const password = formData.get('password') as string
+    const result = signupSchema.safeParse(rawData)
+    if (!result.success) {
+      const errors: SignupFieldErrors = {}
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof SignupFieldErrors
+        if (field && !errors[field]) errors[field] = issue.message
+      }
+      setFieldErrors(errors)
+      return
+    }
 
+    setFieldErrors({})
     setIsLoading(true)
+
     try {
-      await register({ fullName, email, password })
+      await register({
+        fullName: result.data.fullName,
+        email: result.data.email,
+        password: result.data.password,
+      })
       toast.success('Tạo tài khoản thành công!')
       navigate(ROUTES.home, { replace: true })
     } catch (err) {

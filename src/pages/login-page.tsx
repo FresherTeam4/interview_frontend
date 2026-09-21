@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { LoginForm } from '@/features/auth/components/login-form'
-import type { LoginFieldErrors } from '@/features/auth/components/login-form'
+import LoginForm, { type LoginFieldErrors } from '@/features/auth/components/login-form'
 import { useAuth } from '@/hooks/use-auth'
+import { getCurrentUser } from '@/api/auth'
 import { isApiError } from '@/api/api-error'
+
 import { ROUTES } from '@/constants/routes'
-import { validateEmail, validatePassword } from '@/lib/validation'
+import { loginSchema } from '@/lib/validation'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -16,24 +17,13 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
 
-  function validate(formData: FormData): boolean {
-    const errors: LoginFieldErrors = {}
-    const email = (formData.get('email') as string) ?? ''
-    const password = (formData.get('password') as string) ?? ''
-
-    const emailErr = validateEmail(email)
-    if (emailErr) errors.email = emailErr
-
-    const passwordErr = validatePassword(password)
-    if (passwordErr) errors.password = passwordErr
-
-    setFieldErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  function handleFieldChange(field: keyof LoginFieldErrors) {
+  function handleFieldChange(field: string) {
     if (fieldErrors[field]) {
-      setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+      setFieldErrors((prev) => {
+        const next = { ...prev }
+        delete next[field]
+        return next
+      })
     }
   }
 
@@ -42,36 +32,34 @@ export default function LoginPage() {
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    if (!validate(formData)) return
-
-    const email = (formData.get('email') as string).trim()
-    const password = formData.get('password') as string
-
-    setIsLoading(true)
-
-    try {
-      await login({ email, password })
-      toast.success('Đăng nhập thành công!')
-      navigate(ROUTES.home, { replace: true })
-    } catch (err) {
-      if (isApiError(err)) {
-        setError(err.message)
-      } else {
-        setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
-      }
-    } finally {
-      setIsLoading(false)
+    const rawData = {
+      email: ((formData.get('email') as string) ?? '').trim(),
+      password: (formData.get('password') as string) ?? '',
     }
-  }
 
-  async function handleGoogleLogin(idToken: string) {
-    setError('')
+    const result = loginSchema.safeParse(rawData)
+    if (!result.success) {
+      const errors: LoginFieldErrors = {}
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as string
+        if (field && !errors[field]) errors[field] = issue.message
+      }
+      setFieldErrors(errors)
+      return
+    }
+
+    setFieldErrors({})
     setIsLoading(true)
 
     try {
-      await loginWithGoogle(idToken)
-      toast.success('Đăng nhập Google thành công!')
-      navigate(ROUTES.home, { replace: true })
+      await login(result.data)
+      const currentUser = await getCurrentUser()
+      toast.success('Đăng nhập thành công!')
+      if (currentUser?.role === 'ADMIN') {
+        navigate(ROUTES.adminOverview, { replace: true })
+      } else {
+        navigate(ROUTES.home, { replace: true })
+      }
     } catch (err) {
       if (isApiError(err)) setError(err.message)
       else setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
@@ -79,6 +67,33 @@ export default function LoginPage() {
       setIsLoading(false)
     }
   }
+
+  async function handleGoogleLogin(credentialResponse: { credential?: string }) {
+    if (!credentialResponse.credential) {
+      setError('Đăng nhập Google thất bại: Không nhận được thông tin xác thực.')
+      return
+    }
+
+    setError('')
+    setIsLoading(true)
+
+    try {
+      await loginWithGoogle(credentialResponse.credential)
+      const currentUser = await getCurrentUser()
+      toast.success('Đăng nhập Google thành công!')
+      if (currentUser?.role === 'ADMIN') {
+        navigate(ROUTES.adminOverview, { replace: true })
+      } else {
+        navigate(ROUTES.home, { replace: true })
+      }
+    } catch (err) {
+      if (isApiError(err)) setError(err.message)
+      else setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
 
   function handleGoogleError() {
     setError('Không thể đăng nhập với Google. Vui lòng thử lại.')

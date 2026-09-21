@@ -32,3 +32,16 @@ export interface AuthResponse {
   email: string
   role: UserRole
 }
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
+}
+
+export interface ConfirmAccountTokenRequest {
+  token: string
+}

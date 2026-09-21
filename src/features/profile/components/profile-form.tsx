@@ -1,0 +1,184 @@
+import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { BadgeCheck, Save, TriangleAlert, Undo2, UserRoundPen } from 'lucide-react'
+import { FormProvider, useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
+import SuggestionList from '@/components/suggestion-list'
+import EducationFields from '@/features/profile/components/education-fields'
+import ProfileTextField from '@/features/profile/components/profile-text-field'
+import ProjectFields from '@/features/profile/components/project-fields'
+import SkillFields from '@/features/profile/components/skill-fields'
+import {
+  profileSchema,
+  toFormValues,
+  toUpdateRequest,
+  type ProfileFormValues,
+} from '@/features/profile/profile-schema'
+import { getErrorMessage } from '@/api/api-error'
+import { useUpdateCandidateProfile } from '@/hooks/use-candidate-profile'
+import { formatDateTime } from '@/lib/format'
+import {
+  PROFILE_LIMITS,
+  PROFILE_SOURCE_LABEL,
+  SENIORITY_LEVEL_SUGGESTIONS,
+} from '@/constants/profile'
+import type { CandidateProfile } from '@/types/profile'
+
+const SENIORITY_LIST_ID = 'seniority-level-options'
+
+interface ProfileFormProps {
+  profile: CandidateProfile
+}
+
+export default function ProfileForm({ profile }: ProfileFormProps) {
+  const updateProfile = useUpdateCandidateProfile(profile.id)
+  const [savedProfile, setSavedProfile] = useState<CandidateProfile | null>(null)
+  const currentProfile =
+    savedProfile && savedProfile.id === profile.id && savedProfile.version >= profile.version
+      ? savedProfile
+      : profile
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: toFormValues(profile),
+  })
+
+  const { errors, isDirty } = form.formState
+  const isBusy = updateProfile.isPending
+
+  const handleSave = form.handleSubmit(
+    async (values) => {
+      try {
+        const saved = await updateProfile.mutateAsync(toUpdateRequest(values, currentProfile))
+        setSavedProfile(saved)
+        // Response kèm id của những hàng vừa được thêm → reset để lần lưu sau sửa đúng hàng đó
+        // thay vì thêm mới lần nữa.
+        form.reset(toFormValues(saved))
+        toast.success('Đã lưu hồ sơ thành công.')
+      } catch (error) {
+        toast.error(getErrorMessage(error))
+      }
+    },
+    () => toast.error('Vui lòng kiểm tra lại các trường được đánh dấu đỏ.'),
+  )
+
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={handleSave} className="flex flex-col gap-6">
+        {profile.confirmedAt ? (
+          <Alert>
+            <BadgeCheck className="text-success" />
+            <AlertTitle>Hồ sơ đã được xác nhận</AlertTitle>
+            <AlertDescription>
+              Xác nhận lúc {formatDateTime(profile.confirmedAt)}.{' '}
+              {isDirty
+                ? 'Bạn đang có thay đổi chưa lưu — lưu lại để buổi phỏng vấn dùng bản mới nhất.'
+                : 'Hồ sơ này chọn được khi tạo buổi phỏng vấn thử.'}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert>
+            <TriangleAlert />
+            <AlertTitle>Hồ sơ chưa được xác nhận</AlertTitle>
+            <AlertDescription>
+              {isDirty
+                ? 'Bạn đang có thay đổi chưa lưu. Lưu hồ sơ trước, rồi chuyển sang tab "Điểm nhấn & Trọng tâm" để xác nhận.'
+                : 'Chỉnh sửa các trường thông tin nếu cần và lưu lại. Khi đã hoàn tất, hãy chuyển sang tab "Điểm nhấn & Trọng tâm" để xác nhận hồ sơ.'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Card className="border-border/80 shadow-xs">
+          <CardHeader className="border-b border-border/40 pb-4 bg-muted/15 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <UserRoundPen className="size-4.5" />
+              </div>
+              <div>
+                <CardTitle className="text-lg sm:text-xl font-bold text-foreground tracking-tight">
+                  Thông tin chung
+                </CardTitle>
+              </div>
+            </div>
+            <CardAction>
+              <Badge variant="outline">{PROFILE_SOURCE_LABEL[profile.source]}</Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 pt-5">
+            <ProfileTextField
+              id="headline"
+              label="Tiêu đề"
+              placeholder="Backend developer 2 năm kinh nghiệm"
+              error={errors.headline}
+              {...form.register('headline')}
+            />
+            <ProfileTextField
+              id="targetPosition"
+              label="Vị trí mong muốn"
+              placeholder="Java Backend Developer"
+              error={errors.targetPosition}
+              {...form.register('targetPosition')}
+            />
+            <ProfileTextField
+              id="yearsExperience"
+              label="Số năm kinh nghiệm"
+              type="number"
+              step="0.5"
+              min={0}
+              max={PROFILE_LIMITS.yearsExperienceMax}
+              inputMode="decimal"
+              placeholder="1.5"
+              error={errors.yearsExperience}
+              {...form.register('yearsExperience')}
+            />
+            <ProfileTextField
+              id="seniorityLevel"
+              label="Cấp độ"
+              list={SENIORITY_LIST_ID}
+              placeholder="JUNIOR"
+              error={errors.seniorityLevel}
+              {...form.register('seniorityLevel')}
+            />
+            <SuggestionList id={SENIORITY_LIST_ID} options={SENIORITY_LEVEL_SUGGESTIONS} />
+          </CardContent>
+        </Card>
+
+        <EducationFields />
+        <SkillFields />
+        <ProjectFields />
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <Button type="submit" disabled={!isDirty || isBusy}>
+            {updateProfile.isPending ? <Spinner /> : <Save className="size-4" />}
+            Lưu thay đổi
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!isDirty || isBusy}
+            onClick={() => form.reset(toFormValues(currentProfile))}
+          >
+            <Undo2 className="size-4" />
+            Hoàn tác
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {isDirty
+              ? 'Có thay đổi chưa lưu.'
+              : `Cập nhật lần cuối: ${formatDateTime(currentProfile.updatedAt)}`}
+          </span>
+        </div>
+      </form>
+    </FormProvider>
+  )
+}
