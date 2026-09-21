@@ -4,15 +4,21 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowRight,
+  Clock,
   Eye,
   FileCode2,
   History,
   Info,
+  PauseCircle,
+  PowerOff,
   RefreshCw,
   Search,
+  ShieldAlert,
+  Terminal,
   X,
   XCircle,
 } from 'lucide-react'
+
 import { useDebounce } from '@/hooks/use-debounce'
 import {
   Table,
@@ -26,6 +32,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -33,6 +40,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -43,10 +51,14 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import DataPagination from '@/components/data-pagination'
 import {
+  useAdminForceCloseSession,
   useAdminRetryPreparation,
   useAdminRetryScoring,
   useAdminSessionDetail,
+  useAdminSessionDiagnostics,
   useAdminSessions,
+  useAdminStaleSessions,
+  useAdminTerminateSession,
 } from '@/hooks/use-admin'
 import {
   SESSION_MODE_LABEL,
@@ -54,6 +66,7 @@ import {
 } from '@/constants/session'
 import type { InterviewSessionMode, InterviewSessionStatus } from '@/types/admin'
 import { cn } from '@/lib/utils'
+
 
 const PAGE_SIZE = 15
 
@@ -64,15 +77,24 @@ export default function AdminSessionsPage() {
   const [modeFilter, setModeFilter] = useState<'ALL' | InterviewSessionMode>('ALL')
   const [page, setPage] = useState(0)
 
-  // Tự động về trang 1 khi từ khóa tìm kiếm hoặc bộ lọc thay đổi
-  useEffect(() => {
-    setPage(0)
-  }, [debouncedKeyword, statusFilter, modeFilter])
+  // Stale view state
+  const [viewMode, setViewMode] = useState<'ALL' | 'STALE'>('ALL')
+  const [staleMinutes, setStaleMinutes] = useState(15)
 
   // Modals state
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
+  const [actionDialog, setActionDialog] = useState<{
+    sessionId: number
+    type: 'FORCE_CLOSE' | 'TERMINATE'
+  } | null>(null)
+  const [actionReason, setActionReason] = useState('')
 
-  // Queries & Mutations
+  // Tự động về trang 1 khi từ khóa tìm kiếm hoặc bộ lọc thay đổi
+  useEffect(() => {
+    setPage(0)
+  }, [debouncedKeyword, statusFilter, modeFilter, viewMode, staleMinutes])
+
+  // Normal sessions query
   const sessionsQuery = useAdminSessions({
     keyword: debouncedKeyword.trim() || undefined,
     status: statusFilter === 'ALL' ? undefined : statusFilter,
@@ -81,14 +103,28 @@ export default function AdminSessionsPage() {
     size: PAGE_SIZE,
   })
 
+  // Stale sessions query
+  const staleStatusToQuery = statusFilter === 'ALL' ? 'IN_PROGRESS' : statusFilter
+  const staleSessionsQuery = useAdminStaleSessions({
+    status: staleStatusToQuery,
+    staleMinutes,
+    page,
+    size: PAGE_SIZE,
+  })
+
+  const activeQuery = viewMode === 'STALE' ? staleSessionsQuery : sessionsQuery
+
   const detailQuery = useAdminSessionDetail(selectedSessionId)
+  const diagnosticsQuery = useAdminSessionDiagnostics(selectedSessionId)
   const retryPrepMutation = useAdminRetryPreparation()
   const retryScoringMutation = useAdminRetryScoring()
+  const forceCloseMutation = useAdminForceCloseSession()
+  const terminateMutation = useAdminTerminateSession()
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     setPage(0)
-    void sessionsQuery.refetch()
+    void activeQuery.refetch()
   }
 
   function handleStatusChange(val: string) {
@@ -101,8 +137,25 @@ export default function AdminSessionsPage() {
     setPage(0)
   }
 
-  const items = sessionsQuery.data?.items ?? []
-  const totalElements = sessionsQuery.data?.totalElements ?? 0
+  async function handleConfirmAction() {
+    if (!actionDialog) return
+    if (actionDialog.type === 'FORCE_CLOSE') {
+      await forceCloseMutation.mutateAsync({
+        sessionId: actionDialog.sessionId,
+        request: { reason: actionReason.trim() || undefined },
+      })
+    } else {
+      await terminateMutation.mutateAsync({
+        sessionId: actionDialog.sessionId,
+        request: { reason: actionReason.trim() || undefined },
+      })
+    }
+    setActionDialog(null)
+    setActionReason('')
+  }
+
+  const items = activeQuery.data?.items ?? []
+  const totalElements = activeQuery.data?.totalElements ?? 0
   const totalPages = Math.ceil(totalElements / PAGE_SIZE)
 
   return (
@@ -115,19 +168,48 @@ export default function AdminSessionsPage() {
             <span>Vận hành & Giám sát phiên phỏng vấn</span>
           </h2>
           <p className="text-xs text-muted-foreground">
-            Theo dõi vòng đời phiên, phát hiện sự cố AI và thực hiện cứu hộ (Retry Preparation / Scoring)
+            Theo dõi vòng đời phiên, chẩn đoán AI Telemetry, cứu hộ (Retry) và xử lý sự cố khẩn cấp (Force Close / Terminate)
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* View mode toggle */}
+          <div className="flex items-center p-0.5 bg-muted/60 border border-border/80 rounded-lg text-xs">
+            <button
+              type="button"
+              onClick={() => setViewMode('ALL')}
+              className={cn(
+                'px-2.5 py-1 rounded-md transition-all font-medium',
+                viewMode === 'ALL'
+                  ? 'bg-card text-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Tất cả phiên
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('STALE')}
+              className={cn(
+                'px-2.5 py-1 rounded-md transition-all font-medium flex items-center gap-1.5',
+                viewMode === 'STALE'
+                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Clock className="size-3" />
+              <span>Phiên bị treo ({staleMinutes}m)</span>
+            </button>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void sessionsQuery.refetch()}
-            disabled={sessionsQuery.isFetching}
+            onClick={() => void activeQuery.refetch()}
+            disabled={activeQuery.isFetching}
             className="gap-1.5 text-xs h-8"
           >
-            <RefreshCw className={cn('size-3.5', sessionsQuery.isFetching && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', activeQuery.isFetching && 'animate-spin')} />
             <span>Làm mới</span>
           </Button>
         </div>
@@ -141,59 +223,93 @@ export default function AdminSessionsPage() {
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5"
           >
             {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                placeholder="Tìm theo email hoặc tên ứng viên..."
-                className="pl-8 pr-8 h-9 text-xs"
-              />
-              {keyword && (
-                <button
-                  type="button"
-                  onClick={() => setKeyword('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
-                  title="Xóa tìm kiếm"
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
-            </div>
+            {viewMode === 'ALL' && (
+              <div className="relative flex-1">
+                <Search className="size-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  placeholder="Tìm theo email hoặc tên ứng viên..."
+                  className="pl-8 pr-8 h-9 text-xs"
+                />
+                {keyword && (
+                  <button
+                    type="button"
+                    onClick={() => setKeyword('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
+                    title="Xóa tìm kiếm"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Status Filter */}
-            <div className="w-full sm:w-52 shrink-0">
+            <div className={cn('shrink-0', viewMode === 'ALL' ? 'w-full sm:w-52' : 'flex-1')}>
               <Select value={statusFilter} onValueChange={handleStatusChange}>
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="PREPARING">Đang chuẩn bị (PREPARING)</SelectItem>
-                  <SelectItem value="READY">Sẵn sàng (READY)</SelectItem>
-                  <SelectItem value="IN_PROGRESS">Đang phỏng vấn (IN_PROGRESS)</SelectItem>
-                  <SelectItem value="SCORING">Đang chấm điểm (SCORING)</SelectItem>
-                  <SelectItem value="COMPLETED">Đã hoàn thành (COMPLETED)</SelectItem>
-                  <SelectItem value="PREPARATION_FAILED">Lỗi chuẩn bị (PREPARATION_FAILED)</SelectItem>
-                  <SelectItem value="SCORING_FAILED">Lỗi chấm điểm (SCORING_FAILED)</SelectItem>
-                  <SelectItem value="FAILED">Thất bại (FAILED)</SelectItem>
+                  {viewMode === 'ALL' ? (
+                    <>
+                      <SelectItem value="ALL">Tất cả trạng thái</SelectItem>
+                      <SelectItem value="PREPARING">Đang chuẩn bị (PREPARING)</SelectItem>
+                      <SelectItem value="READY">Sẵn sàng (READY)</SelectItem>
+                      <SelectItem value="IN_PROGRESS">Đang phỏng vấn (IN_PROGRESS)</SelectItem>
+                      <SelectItem value="SCORING">Đang chấm điểm (SCORING)</SelectItem>
+                      <SelectItem value="COMPLETED">Đã hoàn thành (COMPLETED)</SelectItem>
+                      <SelectItem value="PREPARATION_FAILED">Lỗi chuẩn bị (PREPARATION_FAILED)</SelectItem>
+                      <SelectItem value="SCORING_FAILED">Lỗi chấm điểm (SCORING_FAILED)</SelectItem>
+                      <SelectItem value="FAILED">Thất bại (FAILED)</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="IN_PROGRESS">Đang phỏng vấn treo (IN_PROGRESS)</SelectItem>
+                      <SelectItem value="PREPARING">Đang chuẩn bị treo (PREPARING)</SelectItem>
+                      <SelectItem value="SCORING">Đang chấm điểm treo (SCORING)</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Mode Filter */}
-            <div className="w-full sm:w-44 shrink-0">
-              <Select value={modeFilter} onValueChange={handleModeChange}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Hình thức" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Tất cả hình thức</SelectItem>
-                  <SelectItem value="TURN_BASED">Theo lượt (Turn-based)</SelectItem>
-                  <SelectItem value="VOICE_REALTIME">Thoại trực tiếp (Realtime)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Mode Filter if ALL */}
+            {viewMode === 'ALL' && (
+              <div className="w-full sm:w-44 shrink-0">
+                <Select value={modeFilter} onValueChange={handleModeChange}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Hình thức" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Tất cả hình thức</SelectItem>
+                    <SelectItem value="TURN_BASED">Theo lượt (Turn-based)</SelectItem>
+                    <SelectItem value="VOICE_REALTIME">Thoại trực tiếp (Realtime)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Stale Threshold selector if STALE */}
+            {viewMode === 'STALE' && (
+              <div className="w-full sm:w-48 shrink-0">
+                <Select
+                  value={String(staleMinutes)}
+                  onValueChange={(v) => setStaleMinutes(Number(v))}
+                >
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Ngưỡng treo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">Treo quá 10 phút</SelectItem>
+                    <SelectItem value="15">Treo quá 15 phút</SelectItem>
+                    <SelectItem value="30">Treo quá 30 phút</SelectItem>
+                    <SelectItem value="60">Treo quá 60 phút</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <Button type="submit" size="sm" className="h-9 text-xs px-4 shrink-0">
               Tìm kiếm
@@ -201,6 +317,7 @@ export default function AdminSessionsPage() {
           </form>
         </CardContent>
       </Card>
+
 
       {/* Sessions Table */}
       <Card className="border border-border/80 bg-card shadow-xs overflow-hidden">
@@ -239,6 +356,10 @@ export default function AdminSessionsPage() {
                   const isScoringFailed = session.status === 'SCORING_FAILED'
                   const isCompleted = session.status === 'COMPLETED'
                   const isInProgress = session.status === 'IN_PROGRESS'
+                  const sessionUser = session.user || session.owner
+                  const candidateName = sessionUser?.fullName || sessionUser?.email || 'Chưa đặt tên'
+                  const candidateEmail = sessionUser?.email
+
 
                   return (
                     <TableRow key={session.id} className="hover:bg-muted/30 transition-colors">
@@ -247,12 +368,14 @@ export default function AdminSessionsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="min-w-0 max-w-[180px]">
-                          <div className="font-medium text-xs text-foreground truncate">
-                            {session.owner?.fullName || 'Chưa đặt tên'}
+                          <div className="font-medium text-xs text-foreground truncate" title={candidateName}>
+                            {candidateName}
                           </div>
-                          <div className="text-[11px] text-muted-foreground truncate font-mono">
-                            {session.owner?.email}
-                          </div>
+                          {candidateEmail && (
+                            <div className="text-[11px] text-muted-foreground truncate font-mono" title={candidateEmail}>
+                              {candidateEmail}
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -261,10 +384,11 @@ export default function AdminSessionsPage() {
                             {session.templateTitle || 'Mẫu tự do'}
                           </div>
                           <div className="text-[11px] text-muted-foreground truncate">
-                            {session.profileHeadline || 'Hồ sơ tiêu chuẩn'}
+                            {session.profileName || session.profileHeadline || 'Hồ sơ tiêu chuẩn'}
                           </div>
                         </div>
                       </TableCell>
+
                       <TableCell>
                         <Badge
                           variant="secondary"
@@ -367,12 +491,41 @@ export default function AdminSessionsPage() {
                               <span>Thử lại chấm</span>
                             </Button>
                           )}
+
+                          {/* Thao tác cứu hộ nhanh: Buộc kết thúc phiên đang chạy */}
+                          {isInProgress && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setActionDialog({ sessionId: session.id, type: 'FORCE_CLOSE' })}
+                              className="h-7 px-2 text-xs gap-1 text-purple-600 border-purple-500/30 hover:bg-purple-500/10"
+                              title="Buộc kết thúc phỏng vấn và chuyển sang chấm điểm"
+                            >
+                              <PauseCircle className="size-3" />
+                              <span className="hidden sm:inline">Dừng & Chấm</span>
+                            </Button>
+                          )}
+
+                          {/* Thao tác cứu hộ nhanh: Hủy phiên khẩn cấp */}
+                          {!isCompleted && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setActionDialog({ sessionId: session.id, type: 'TERMINATE' })}
+                              className="h-7 px-2 text-xs gap-1 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                              title="Hủy phiên khẩn cấp (không chấm điểm)"
+                            >
+                              <PowerOff className="size-3" />
+                              <span className="hidden sm:inline">Hủy</span>
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
                   )
                 })
               )}
+
             </TableBody>
           </Table>
         </div>
@@ -419,9 +572,17 @@ export default function AdminSessionsPage() {
                 <div>
                   <span className="text-muted-foreground block text-[11px]">Ứng viên:</span>
                   <strong className="text-foreground font-medium truncate block">
-                    {detailQuery.data.owner?.fullName || detailQuery.data.owner?.email}
+                    {(detailQuery.data.user?.fullName || detailQuery.data.owner?.fullName) ||
+                      (detailQuery.data.user?.email || detailQuery.data.owner?.email) ||
+                      'Chưa đặt tên'}
                   </strong>
+                  {(detailQuery.data.user?.email || detailQuery.data.owner?.email) && (
+                    <span className="text-[10px] text-muted-foreground font-mono block truncate">
+                      {detailQuery.data.user?.email || detailQuery.data.owner?.email}
+                    </span>
+                  )}
                 </div>
+
                 <div>
                   <span className="text-muted-foreground block text-[11px]">Trạng thái:</span>
                   <Badge variant="outline" className="text-[10px] mt-0.5">
@@ -472,6 +633,35 @@ export default function AdminSessionsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* AI Diagnostics & Telemetry Card */}
+              {diagnosticsQuery.data && (
+                <div className="p-3.5 rounded-xl border border-primary/25 bg-primary/5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-semibold text-foreground flex items-center gap-1.5 text-xs">
+                      <Terminal className="size-3.5 text-primary" />
+                      <span>Chẩn đoán & Đo lường AI Engine (Telemetry)</span>
+                    </h5>
+                    {diagnosticsQuery.isFetching && (
+                      <RefreshCw className="size-3 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+                    <div>
+                      Provider: <strong className="text-foreground font-mono">{diagnosticsQuery.data.realtimeProvider || 'WebRTC'}</strong>
+                    </div>
+                    <div>
+                      Turn hiện tại: <strong className="text-foreground font-mono">{diagnosticsQuery.data.currentTurnIndex}</strong>
+                    </div>
+                    <div>
+                      Lần sửa lỗi (Prep/Score): <strong className="text-foreground font-mono">{diagnosticsQuery.data.adminPreparationRetries}/{diagnosticsQuery.data.adminScoringRetries}</strong>
+                    </div>
+                    <div className="col-span-2 sm:col-span-3">
+                      Hoạt động cuối: <strong className="text-foreground font-mono">{diagnosticsQuery.data.lastActivityAt ? new Date(diagnosticsQuery.data.lastActivityAt).toLocaleString('vi-VN') : '—'}</strong>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Error Box if any */}
               {(detailQuery.data.preparationErrorMessage || detailQuery.data.scoringErrorMessage) && (
@@ -550,10 +740,10 @@ export default function AdminSessionsPage() {
                               className={cn(
                                 'text-[9px] px-1.5 py-0 font-normal',
                                 trans.actor === 'ADMIN'
-                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                                  : trans.actor === 'SYSTEM'
-                                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                    : 'bg-muted',
+                                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                    : trans.actor === 'SYSTEM'
+                                      ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                      : 'bg-muted',
                               )}
                             >
                               {trans.actor}
@@ -577,10 +767,99 @@ export default function AdminSessionsPage() {
                   )}
                 </div>
               </div>
+
+              {/* Emergency Operations Box inside Modal */}
+              <div className="pt-2 border-t border-border/80 flex items-center justify-between gap-2">
+                <span className="text-[11px] text-muted-foreground">
+                  Thao tác can thiệp vận hành:
+                </span>
+                <div className="flex items-center gap-2">
+                  {detailQuery.data.status === 'IN_PROGRESS' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setActionDialog({ sessionId: detailQuery.data!.id, type: 'FORCE_CLOSE' })}
+                      className="h-7 text-xs gap-1.5 text-purple-600 border-purple-500/30 hover:bg-purple-500/10"
+                    >
+                      <PauseCircle className="size-3.5" />
+                      <span>Dừng & Chấm điểm</span>
+                    </Button>
+                  )}
+                  {detailQuery.data.status !== 'COMPLETED' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setActionDialog({ sessionId: detailQuery.data!.id, type: 'TERMINATE' })}
+                      className="h-7 text-xs gap-1.5 text-destructive hover:bg-destructive/10"
+                    >
+                      <PowerOff className="size-3.5" />
+                      <span>Hủy phiên khẩn cấp</span>
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Action Confirmation Dialog (Force Close / Terminate) */}
+      <Dialog open={Boolean(actionDialog)} onOpenChange={(open) => !open && setActionDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold flex items-center gap-2">
+              <ShieldAlert className="size-4 text-destructive" />
+              <span>
+                {actionDialog?.type === 'FORCE_CLOSE'
+                  ? `Buộc kết thúc & Chấm điểm phiên #${actionDialog?.sessionId}`
+                  : `Hủy khẩn cấp phiên #${actionDialog?.sessionId}`}
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {actionDialog?.type === 'FORCE_CLOSE'
+                ? 'Hành động này sẽ ngắt phiên phỏng vấn đang diễn ra và kích hoạt chấm điểm ngay lập tức.'
+                : 'Hành động này sẽ dừng phiên phỏng vấn mà KHÔNG chấm điểm. Hãy sử dụng cẩn trọng khi phiên gặp sự cố không thể khắc phục.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            <label className="font-medium text-foreground block">
+              Lý do can thiệp vận hành (tùy chọn):
+            </label>
+            <Textarea
+              value={actionReason}
+              onChange={(e) => setActionReason(e.target.value)}
+              placeholder="VD: Phiên bị treo quá 15 phút, người dùng yêu cầu cứu trợ..."
+              className="text-xs min-h-[70px]"
+            />
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActionDialog(null)}
+              disabled={forceCloseMutation.isPending || terminateMutation.isPending}
+              className="text-xs"
+            >
+              Hủy
+            </Button>
+            <Button
+              size="sm"
+              variant={actionDialog?.type === 'TERMINATE' ? 'destructive' : 'default'}
+              onClick={() => void handleConfirmAction()}
+              disabled={forceCloseMutation.isPending || terminateMutation.isPending}
+              className="text-xs gap-1.5"
+            >
+              {(forceCloseMutation.isPending || terminateMutation.isPending) && (
+                <RefreshCw className="size-3 animate-spin" />
+              )}
+              <span>Xác nhận thực hiện</span>
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+

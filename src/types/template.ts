@@ -1,3 +1,5 @@
+import type { TemplateModerationStatus } from './admin'
+
 export type SkillLevel = 'MUST_HAVE' | 'NICE_TO_HAVE'
 
 export interface KeySkill {
@@ -27,6 +29,10 @@ export interface InterviewTemplate {
   confirmedAt?: string
   published: boolean
   publishedAt?: string
+  moderationStatus?: TemplateModerationStatus
+  moderationReason?: string
+  submittedAt?: string
+  reviewedAt?: string
   archivedAt?: string
   version: number
   createdAt: string
@@ -41,6 +47,11 @@ export interface InterviewTemplateSummary {
   targetSeniority?: string
   confirmed: boolean
   published: boolean
+  moderationStatus?: TemplateModerationStatus
+  moderationReason?: string
+  category?: string
+  tagsJson?: string
+  featured?: boolean
   archivedAt?: string
   createdAt?: string
   updatedAt: string

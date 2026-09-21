@@ -36,3 +36,17 @@ export interface SupportTicketPageResponse {
   size: number
   totalElements: number
 }
+
+export interface SupportTicketMessageResponse {
+  id: number
+  senderId: number
+  senderName: string
+  senderRole: string
+  visibility: 'PUBLIC' | 'INTERNAL'
+  message: string
+  createdAt: string
+}
+
+export interface CreateSupportMessageRequest {
+  message: string
+}

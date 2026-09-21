@@ -47,6 +47,7 @@ interface RoleDetailDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onStartPractice?: (template: InterviewTemplate) => void
+  isCommunity?: boolean
 }
 
 export default function RoleDetailDialog({
@@ -54,6 +55,7 @@ export default function RoleDetailDialog({
   open,
   onOpenChange,
   onStartPractice,
+  isCommunity = false,
 }: RoleDetailDialogProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === ROLES.ADMIN
@@ -221,14 +223,14 @@ export default function RoleDetailDialog({
               </Badge>
             )}
             {template?.confirmed ? (
-              <Badge variant="outline" className="gap-1 text-success border-success/30">
+              <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-300/80 bg-emerald-50/30 dark:bg-emerald-950/20">
                 <BadgeCheck className="size-3.5" />
-                Đã duyệt tiêu chí
+                Tiêu chí sẵn sàng
               </Badge>
             ) : (
               <Badge variant="outline" className="gap-1 text-amber-600 border-amber-300 bg-amber-50/50 dark:bg-amber-950/30">
                 <TriangleAlert className="size-3.5" />
-                Chờ duyệt tiêu chí
+                Chưa chốt tiêu chí
               </Badge>
             )}
           </div>
@@ -238,7 +240,7 @@ export default function RoleDetailDialog({
             <DialogTitle className="text-xl font-bold">
               {template?.title || 'Chi tiết vị trí phỏng vấn'}
             </DialogTitle>
-            {template && !template.confirmed && !isEditingCriteria && (
+            {template && !template.confirmed && !template.published && !isCommunity && !isEditingCriteria && (
               <Button
                 variant="outline"
                 size="sm"
@@ -485,7 +487,7 @@ export default function RoleDetailDialog({
                     {template.published ? 'Gỡ công khai' : 'Công khai vị trí'}
                   </Button>
                 )}
-                {template && !template.archivedAt && (
+                {!isCommunity && template && !template.archivedAt && (
                   <Button
                     variant="ghost"
                     size="sm"

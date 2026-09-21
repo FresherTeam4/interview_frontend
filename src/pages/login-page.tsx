@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
 import LoginForm, { type LoginFieldErrors } from '@/features/auth/components/login-form'
 import { useAuth } from '@/hooks/use-auth'
+import { getCurrentUser } from '@/api/auth'
 import { isApiError } from '@/api/api-error'
+
 import { ROUTES } from '@/constants/routes'
 import { loginSchema } from '@/lib/validation'
 
@@ -51,8 +53,13 @@ export default function LoginPage() {
 
     try {
       await login(result.data)
+      const currentUser = await getCurrentUser()
       toast.success('Đăng nhập thành công!')
-      navigate(ROUTES.home, { replace: true })
+      if (currentUser?.role === 'ADMIN') {
+        navigate(ROUTES.adminOverview, { replace: true })
+      } else {
+        navigate(ROUTES.home, { replace: true })
+      }
     } catch (err) {
       if (isApiError(err)) setError(err.message)
       else setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
@@ -72,8 +79,13 @@ export default function LoginPage() {
 
     try {
       await loginWithGoogle(credentialResponse.credential)
+      const currentUser = await getCurrentUser()
       toast.success('Đăng nhập Google thành công!')
-      navigate(ROUTES.home, { replace: true })
+      if (currentUser?.role === 'ADMIN') {
+        navigate(ROUTES.adminOverview, { replace: true })
+      } else {
+        navigate(ROUTES.home, { replace: true })
+      }
     } catch (err) {
       if (isApiError(err)) setError(err.message)
       else setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
@@ -81,6 +93,7 @@ export default function LoginPage() {
       setIsLoading(false)
     }
   }
+
 
   function handleGoogleError() {
     setError('Không thể đăng nhập với Google. Vui lòng thử lại.')

@@ -26,10 +26,13 @@ import type {
   CreateSessionRequest,
   InterviewSession,
   SessionListScope,
+  SessionMode,
+  SessionStatus,
   SessionVersionRequest,
   SubmitTextAnswerRequest,
   Turn,
 } from '@/types/session'
+
 
 export function useSession(sessionId: number) {
   return useQuery({
@@ -53,18 +56,30 @@ export function useSession(sessionId: number) {
   })
 }
 
-export function useSessions(scope: SessionListScope = 'ACTIVE', page = 0, size = 10) {
+export function useSessions(
+  scope: SessionListScope = 'ACTIVE',
+  page = 0,
+  size = 10,
+  filters?: {
+    keyword?: string
+    status?: SessionStatus
+    mode?: SessionMode
+    createdFrom?: string
+    createdTo?: string
+  },
+) {
   const { user } = useAuth()
   const userId = user?.id ?? tokenStorage.getUserId()
 
   return useQuery({
-    queryKey: QUERY_KEYS.sessionList(userId, scope, page, size),
-    queryFn: () => listSessions(scope, page, size, userId),
+    queryKey: ['sessions', 'list', userId ?? 'anonymous', scope, page, size, filters],
+    queryFn: () => listSessions(scope, page, size, userId, filters),
     refetchInterval: (query) => {
       const data = query.state.data
       if (!data?.items?.length) return false
       const hasPending = data.items.some(
         (s) =>
+          s.status === 'PREPARING' ||
           s.status === 'SCRIPT_GENERATING' ||
           s.status === 'CREATED' ||
           s.status === 'SCORING',

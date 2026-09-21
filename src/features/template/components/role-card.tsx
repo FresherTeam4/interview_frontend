@@ -2,6 +2,8 @@ import { useState } from 'react'
 import {
   BadgeCheck,
   Briefcase,
+  CheckCircle2,
+  Clock,
   Globe,
   Lock,
   Play,
@@ -11,6 +13,8 @@ import {
   Archive,
   Copy,
   Heart,
+  Send,
+  XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
@@ -30,6 +34,7 @@ import {
   useCloneInterviewTemplate,
   useFavoriteInterviewTemplate,
   usePublishInterviewTemplate,
+  useSubmitTemplateForReview,
   useUnfavoriteInterviewTemplate,
   useUnpublishInterviewTemplate,
 } from '@/hooks/use-interview-templates'
@@ -44,6 +49,7 @@ interface RoleCardProps {
   onPractice: (role: InterviewTemplateSummary) => void
   onArchive?: (role: InterviewTemplateSummary) => void
   isFavorited?: boolean
+  isCommunity?: boolean
 }
 
 export default function RoleCard({
@@ -52,6 +58,7 @@ export default function RoleCard({
   onPractice,
   onArchive,
   isFavorited = false,
+  isCommunity = false,
 }: RoleCardProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === ROLES.ADMIN
@@ -62,11 +69,29 @@ export default function RoleCard({
   const cloneMutation = useCloneInterviewTemplate()
   const favoriteMutation = useFavoriteInterviewTemplate()
   const unfavoriteMutation = useUnfavoriteInterviewTemplate()
+  const submitReviewMutation = useSubmitTemplateForReview()
 
   const [isArchiving, setIsArchiving] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [isCloning, setIsCloning] = useState(false)
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [favorited, setFavorited] = useState(isFavorited)
+
+  async function handleSubmitReview() {
+    setIsSubmittingReview(true)
+    try {
+      const full = await getInterviewTemplate(role.id)
+      await submitReviewMutation.mutateAsync({
+        id: role.id,
+        expectedVersion: full.version,
+      })
+      toast.success(`Đã gửi mẫu "${role.title}" vào danh sách chờ duyệt của ban quản trị`)
+    } catch (err) {
+      toast.error('Gửi kiểm duyệt thất bại: ' + getErrorMessage(err))
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
 
   async function handleToggleFavorite() {
     try {
@@ -170,15 +195,36 @@ export default function RoleCard({
               </Badge>
             )}
 
-            {role.confirmed ? (
-              <Badge variant="outline" className="gap-1 text-[11px] text-success border-success/30">
-                <BadgeCheck className="size-3" />
-                Đã duyệt
+            {/* Trạng thái tiêu chí của ứng viên */}
+            {!role.confirmed ? (
+              <Badge variant="outline" className="gap-1 text-[11px] text-amber-600 border-amber-300 bg-amber-50/50 dark:bg-amber-950/30" title="Ứng viên chưa chốt tiêu chí phỏng vấn">
+                <TriangleAlert className="size-3" />
+                Chưa chốt tiêu chí
               </Badge>
             ) : (
-              <Badge variant="outline" className="gap-1 text-[11px] text-amber-600 border-amber-300 bg-amber-50/50 dark:bg-amber-950/30">
-                <TriangleAlert className="size-3" />
-                Chờ duyệt
+              <Badge variant="outline" className="gap-1 text-[11px] text-emerald-600 border-emerald-300/80 bg-emerald-50/30 dark:bg-emerald-950/20" title="Tiêu chí phỏng vấn đã được xác nhận sẵn sàng">
+                <BadgeCheck className="size-3" />
+                Tiêu chí sẵn sàng
+              </Badge>
+            )}
+
+            {/* Trạng thái kiểm duyệt của Admin */}
+            {role.moderationStatus === 'PENDING_REVIEW' && (
+              <Badge variant="outline" className="gap-1 text-[11px] text-amber-600 border-amber-500/40 bg-amber-500/10" title="Đang trong hàng đợi chờ Admin kiểm duyệt công khai">
+                <Clock className="size-3 animate-pulse" />
+                Chờ Admin duyệt
+              </Badge>
+            )}
+            {role.moderationStatus === 'APPROVED' && !role.published && (
+              <Badge variant="outline" className="gap-1 text-[11px] text-emerald-600 border-emerald-500/40 bg-emerald-500/10" title="Admin đã duyệt, chờ công khai">
+                <CheckCircle2 className="size-3" />
+                Admin đã duyệt
+              </Badge>
+            )}
+            {role.moderationStatus === 'REJECTED' && (
+              <Badge variant="destructive" className="gap-1 text-[11px]" title={role.moderationReason ? `Lý do: ${role.moderationReason}` : 'Bị Admin từ chối duyệt'}>
+                <XCircle className="size-3" />
+                Bị từ chối
               </Badge>
             )}
           </div>
@@ -207,10 +253,10 @@ export default function RoleCard({
                   <MoreVertical className="size-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44 text-xs">
+              <DropdownMenuContent align="end" className="w-52 text-xs">
                 <DropdownMenuItem onClick={() => onViewDetail(role.id)} className="gap-2 cursor-pointer">
                   <Eye className="size-3.5" />
-                  Xem & sửa tiêu chí
+                  <span>{isCommunity || role.published || role.confirmed ? 'Xem tiêu chí' : 'Xem & sửa tiêu chí'}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onPractice(role)} className="gap-2 cursor-pointer">
                   <Play className="size-3.5 fill-current" />
@@ -222,30 +268,82 @@ export default function RoleCard({
                   className="gap-2 cursor-pointer"
                 >
                   <Copy className="size-3.5" />
-                  Nhân bản vị trí
+                  <span>{isCommunity ? 'Nhân bản về kho của tôi' : 'Nhân bản vị trí'}</span>
                 </DropdownMenuItem>
-                {isAdmin && (
+
+                {/* Các tính năng chỉ khả dụng ở tab cá nhân ("Của tôi") */}
+                {!isCommunity && (
                   <>
+                    {/* Trạng thái gửi duyệt công khai */}
+                    {role.published ? (
+                      <DropdownMenuItem disabled className="gap-2 text-blue-600/80 font-medium">
+                        <Globe className="size-3.5" />
+                        Đã công khai trên cộng đồng
+                      </DropdownMenuItem>
+                    ) : role.moderationStatus === 'PENDING_REVIEW' ? (
+                      <DropdownMenuItem disabled className="gap-2 text-amber-600/80 font-medium">
+                        <Clock className="size-3.5" />
+                        Đang chờ Admin duyệt công khai
+                      </DropdownMenuItem>
+                    ) : role.moderationStatus === 'APPROVED' ? (
+                      <DropdownMenuItem disabled className="gap-2 text-emerald-600/80 font-medium">
+                        <CheckCircle2 className="size-3.5" />
+                        Admin đã duyệt (chờ xuất bản)
+                      </DropdownMenuItem>
+                    ) : role.moderationStatus === 'REJECTED' ? (
+                      <DropdownMenuItem
+                        onClick={() => void handleSubmitReview()}
+                        disabled={isSubmittingReview || !role.confirmed}
+                        className="gap-2 cursor-pointer text-amber-600 dark:text-amber-400 font-medium"
+                      >
+                        <Send className="size-3.5" />
+                        Gửi duyệt lại công khai
+                      </DropdownMenuItem>
+                    ) : role.confirmed ? (
+                      <DropdownMenuItem
+                        onClick={() => void handleSubmitReview()}
+                        disabled={isSubmittingReview}
+                        className="gap-2 cursor-pointer text-amber-600 dark:text-amber-400 font-medium"
+                      >
+                        <Send className="size-3.5" />
+                        Gửi duyệt công khai
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        disabled
+                        className="gap-2 text-muted-foreground opacity-60"
+                        title="Bạn cần xác nhận tiêu chí trước khi có thể gửi duyệt công khai"
+                      >
+                        <Send className="size-3.5" />
+                        Chưa chốt tiêu chí để gửi duyệt
+                      </DropdownMenuItem>
+                    )}
+
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => void handleTogglePublish()}
+                          disabled={isPublishing}
+                          className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
+                        >
+                          <Globe className="size-3.5" />
+                          {role.published ? 'Gỡ công khai' : 'Công khai vị trí'}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => void handleTogglePublish()}
-                      disabled={isPublishing}
-                      className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
+                      onClick={() => void handleQuickArchive()}
+                      disabled={isArchiving}
+                      className="gap-2 text-destructive focus:text-destructive cursor-pointer"
                     >
-                      <Globe className="size-3.5" />
-                      {role.published ? 'Gỡ công khai' : 'Công khai vị trí'}
+                      <Archive className="size-3.5" />
+                      Lưu trữ vị trí
                     </DropdownMenuItem>
                   </>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => void handleQuickArchive()}
-                  disabled={isArchiving}
-                  className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-                >
-                  <Archive className="size-3.5" />
-                  Lưu trữ vị trí
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

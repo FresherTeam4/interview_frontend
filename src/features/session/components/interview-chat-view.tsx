@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { Loader2, Square, Volume2 } from 'lucide-react'
+import { Loader2, RefreshCw, Square, Volume2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useTurnAudioPlayer } from '@/hooks/use-turn-audio-player'
+import { useRetryTurn } from '@/hooks/use-interview-session'
+import { getErrorMessage } from '@/api/api-error'
 import { cn } from '@/lib/utils'
 import { formatTime } from '@/lib/format'
 import type { SessionMode, Turn } from '@/types/session'
@@ -28,6 +31,16 @@ export default function InterviewChatView({
   const bottomRef = useRef<HTMLDivElement>(null)
   const playedTurnIdsRef = useRef<Set<number>>(new Set())
   const { playingTurnId, loadingTurnId, playTurn, stopAudio } = useTurnAudioPlayer(sessionId)
+  const retryTurnMutation = useRetryTurn(sessionId)
+
+  async function handleRetryCandidateTurn(turnId: number) {
+    try {
+      await retryTurnMutation.mutateAsync(turnId)
+      toast.success('Đã gửi lại câu trả lời thành công')
+    } catch (err) {
+      toast.error('Thử lại lượt trả lời thất bại: ' + getErrorMessage(err))
+    }
+  }
 
   // Notify parent component when audio playback status changes
   useEffect(() => {
@@ -161,6 +174,24 @@ export default function InterviewChatView({
                       <span className="w-0.5 bg-primary rounded-full animate-pulse h-2.5" />
                       <span className="w-0.5 bg-primary rounded-full animate-pulse h-1.5" />
                     </div>
+                  </div>
+                )}
+
+                {/* Retry button if candidate turn failed */}
+                {!isInterviewer && turn.processingStatus === 'FAILED' && (
+                  <div className="flex items-center gap-2 justify-end mt-2 pt-1.5 border-t border-destructive/30 text-xs text-destructive">
+                    <span className="text-[11px]">Lượt trả lời gặp lỗi xử lý</span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => void handleRetryCandidateTurn(turn.id)}
+                      disabled={retryTurnMutation.isPending}
+                      className="h-6 px-2 text-[11px] gap-1 shrink-0 font-medium"
+                    >
+                      <RefreshCw className={cn('size-3', retryTurnMutation.isPending && 'animate-spin')} />
+                      Thử lại lượt này
+                    </Button>
                   </div>
                 )}
               </div>

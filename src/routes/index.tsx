@@ -24,7 +24,17 @@ import AdminLayout from '@/routes/admin-layout'
 import AdminOverviewPage from '@/pages/admin/admin-overview-page'
 import AdminUsersPage from '@/pages/admin/admin-users-page'
 import AdminSessionsPage from '@/pages/admin/admin-sessions-page'
+import AdminTemplatesPage from '@/pages/admin/admin-templates-page'
 import { ROUTES } from '@/constants/routes'
+import { useAuth } from '@/hooks/use-auth'
+
+function HomeRedirect() {
+  const { user } = useAuth()
+  if (user?.role === 'ADMIN') {
+    return <Navigate to={ROUTES.adminOverview} replace />
+  }
+  return <Navigate to={ROUTES.dashboard} replace />
+}
 
 export const router = createBrowserRouter([
   // Auth — layout riêng, không header/footer
@@ -52,8 +62,9 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         errorElement: <RouteErrorBoundary />,
         children: [
-          { index: true, element: <Navigate to={ROUTES.dashboard} replace /> },
+          { index: true, element: <HomeRedirect /> },
           { path: 'dashboard', element: <DashboardPage /> },
+
 
           // CV được gộp hoàn toàn vào Hồ sơ ứng viên
           { path: 'cv', element: <Navigate to={ROUTES.profile} replace /> },
@@ -87,7 +98,9 @@ export const router = createBrowserRouter([
                   { path: 'overview', element: <AdminOverviewPage /> },
                   { path: 'users', element: <AdminUsersPage /> },
                   { path: 'sessions', element: <AdminSessionsPage /> },
+                  { path: 'templates', element: <AdminTemplatesPage /> },
                 ],
+
               },
             ],
           },

@@ -100,6 +100,16 @@ export async function unfavoriteInterviewTemplate(id: number): Promise<TemplateF
   return res.data
 }
 
+export async function submitTemplateForReview(
+  id: number,
+  expectedVersion: number,
+): Promise<InterviewTemplate> {
+  const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/submit-review`, {
+    expectedVersion,
+  })
+  return res.data
+}
+
 export async function getInterviewSessionOptions(): Promise<InterviewSessionOptions> {
   const res = await api.get<InterviewSessionOptions>('/interview-session-options')
   return res.data

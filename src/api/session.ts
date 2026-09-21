@@ -1,5 +1,4 @@
 import { api } from '@/api/client'
-import type { PageResponse } from '@/types/jd'
 import type { InterviewReport } from '@/types/report'
 import type {
   CreateSessionRequest,
@@ -8,7 +7,6 @@ import type {
   InterviewSession,
   InterviewSessionAccepted,
   InterviewSessionPageResponse,
-  InterviewSessionSummary,
   SessionListScope,
   SessionMode,
   SessionStatus,
@@ -22,10 +20,10 @@ import type {
 import { tokenStorage } from '@/api/token-storage'
 import {
   getStoredSessions,
-  removeStoredSession,
   saveStoredSessionDetail,
   updateStoredSessionSummary,
 } from '@/features/session/services/session-mock-service'
+
 
 export async function createSession(
   idempotencyKey: string,
@@ -191,142 +189,58 @@ export async function getSession(sessionId: number): Promise<InterviewSession> {
   }
 }
 
-const checkedReportSessionIds = new Set<number>()
-
 export async function listSessions(
   scope: SessionListScope = 'ACTIVE',
   page = 0,
   size = 10,
-  userId?: number | null,
-): Promise<PageResponse<InterviewSessionSummary>> {
-  const effectiveUserId = userId ?? tokenStorage.getUserId()
-  if (!effectiveUserId) {
-    return {
-      items: [],
-      totalElements: 0,
-      totalPages: 0,
-      page,
-      size,
-    }
-  }
-
-  let all = getStoredSessions(effectiveUserId)
-  const invalidSessionIds = new Set<number>()
-
-  // Đồng bộ trạng thái thực tế từ backend cho danh sách các phiên
-  await Promise.allSettled(
-    all.map(async (s) => {
-      try {
-        const res = await api.get<{
-          id: number
-          status: string
-          templateTitle?: string
-          profileName?: string
-          durationMinutes?: number
-        }>(`/interview-sessions/${s.id}`)
-
-        const rawStatus = res.data?.status
-        if (!rawStatus) return
-
-        let updatedStatus = s.status
-        if (rawStatus === 'PREPARING') updatedStatus = 'SCRIPT_GENERATING'
-        else if (rawStatus === 'READY') updatedStatus = 'READY'
-        else if (rawStatus === 'IN_PROGRESS') updatedStatus = 'IN_PROGRESS'
-        else if (rawStatus === 'SCORING') updatedStatus = 'SCORING'
-        else if (rawStatus === 'COMPLETED') updatedStatus = 'COMPLETED'
-        else if (rawStatus === 'SCORING_FAILED') updatedStatus = 'SCORING_FAILED'
-        else if (rawStatus === 'PREPARATION_FAILED') updatedStatus = 'FAILED'
-        else if (rawStatus === 'CANCELLED' || rawStatus === 'EXPIRED') updatedStatus = 'ABANDONED'
-
-        let overallScore = s.overallScore
-        if (updatedStatus === 'COMPLETED' && overallScore == null && !checkedReportSessionIds.has(s.id)) {
-          checkedReportSessionIds.add(s.id)
-          try {
-            const rep = await api.get<{
-              overallScore?: number
-              report?: { score?: number | null }
-            }>(`/interview-sessions/${s.id}/report`)
-            const fetchedScore = rep.data?.report?.score ?? rep.data?.overallScore
-            if (typeof fetchedScore === 'number') {
-              overallScore = fetchedScore
-            }
-          } catch {
-            // report chưa xong
-          }
-        }
-
-        const durationMinutes = res.data?.durationMinutes ?? s.durationMinutes
-        const templateTitle = res.data?.templateTitle ?? s.jobDescriptionTitle
-        const profileHeadline = res.data?.profileName ?? s.profileHeadline
-
-        const hasChanged =
-          updatedStatus !== s.status ||
-          overallScore !== s.overallScore ||
-          (durationMinutes !== undefined && durationMinutes !== s.durationMinutes) ||
-          (templateTitle && templateTitle !== s.jobDescriptionTitle) ||
-          (profileHeadline && profileHeadline !== s.profileHeadline)
-
-        if (hasChanged) {
-          s.status = updatedStatus
-          s.overallScore = overallScore
-          if (durationMinutes !== undefined) s.durationMinutes = durationMinutes
-          if (templateTitle) s.jobDescriptionTitle = templateTitle
-          if (profileHeadline) s.profileHeadline = profileHeadline
-          updateStoredSessionSummary(
-            s.id,
-            {
-              status: updatedStatus,
-              overallScore,
-              durationMinutes: s.durationMinutes,
-              jobDescriptionTitle: s.jobDescriptionTitle,
-              profileHeadline: s.profileHeadline,
-            },
-            effectiveUserId,
-          )
-        }
-      } catch (err: unknown) {
-        // Nếu backend trả về 404 hoặc 403, phiên này không thuộc về user hiện tại hoặc không tồn tại
-        const status = (err as { response?: { status?: number } })?.response?.status
-        if (status === 404 || status === 403) {
-          invalidSessionIds.add(s.id)
-          removeStoredSession(s.id, effectiveUserId)
-        }
-      }
-    }),
-  )
-
-  if (invalidSessionIds.size > 0) {
-    all = all.filter((s) => !invalidSessionIds.has(s.id))
-  }
-
-  const filtered = all.filter((s) => {
-    if (scope === 'ACTIVE') {
-      return (
-        s.status === 'READY' ||
-        s.status === 'IN_PROGRESS' ||
-        s.status === 'PAUSED' ||
-        s.status === 'CREATED' ||
-        s.status === 'SCRIPT_GENERATING'
-      )
-    }
-    if (scope === 'HISTORY') {
-      return (
-        s.status === 'COMPLETED' ||
-        s.status === 'SCORING' ||
-        s.status === 'SCORING_FAILED' ||
-        s.status === 'ABANDONED' ||
-        s.status === 'FAILED'
-      )
-    }
-    return true
-  })
-  return {
-    items: filtered.slice(page * size, (page + 1) * size),
-    totalElements: filtered.length,
-    totalPages: Math.ceil(filtered.length / size) || 1,
+  _userId?: number | null,
+  filters?: {
+    keyword?: string
+    status?: SessionStatus
+    mode?: SessionMode
+    createdFrom?: string
+    createdTo?: string
+  },
+): Promise<InterviewSessionPageResponse> {
+  const params: Record<string, unknown> = {
     page,
     size,
   }
+  if (filters?.keyword?.trim()) {
+    params.keyword = filters.keyword.trim()
+  }
+  if (filters?.status) {
+    params.status = filters.status
+  } else if (scope === 'HISTORY') {
+    params.status = 'COMPLETED'
+  }
+  if (filters?.mode) {
+    params.mode = filters.mode
+  }
+  if (filters?.createdFrom) {
+    params.createdFrom = filters.createdFrom
+  }
+  if (filters?.createdTo) {
+    params.createdTo = filters.createdTo
+  }
+
+  const res = await api.get<InterviewSessionPageResponse>('/interview-sessions', {
+    params,
+  })
+
+  // Nếu là tab ACTIVE và không chỉ định status cụ thể, lọc các phiên chưa kết thúc
+  if (scope === 'ACTIVE' && !filters?.status) {
+    const activeItems = res.data.items.filter(
+      (s) => s.status !== 'COMPLETED' && s.status !== 'CANCELLED' && s.status !== 'EXPIRED',
+    )
+    return {
+      ...res.data,
+      items: activeItems,
+      totalElements: activeItems.length,
+    }
+  }
+
+  return res.data
 }
 
 export async function startSession(

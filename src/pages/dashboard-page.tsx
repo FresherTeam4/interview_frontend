@@ -14,6 +14,7 @@ import {
   TrendingDown,
   Target,
   Flame,
+  ShieldCheck,
 } from 'lucide-react'
 import { Link } from 'react-router'
 import { Badge } from '@/components/ui/badge'
@@ -31,6 +32,7 @@ import { formatDate } from '@/lib/format'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
   const profilesQuery = useCandidateProfiles()
   const templatesQuery = useInterviewTemplates('mine', 0, 50)
   const activeSessionsQuery = useSessions('ACTIVE', 0, 5)
@@ -53,7 +55,30 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6 pb-12">
       <PageHeader
-        title={`Xin chào, ${user?.fullName ?? 'bạn'}!`}
+        title={
+          isAdmin ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                asChild
+                size="sm"
+                className="gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-xs"
+              >
+                <Link to={ROUTES.adminOverview}>
+                  <ShieldCheck className="size-4" />
+                  <span>Quay lại Quản trị</span>
+                </Link>
+              </Button>
+              <Badge
+                variant="outline"
+                className="text-xs font-normal text-muted-foreground border-border/80 py-1 px-2.5 bg-muted/40"
+              >
+                Chế độ xem giao diện người dùng
+              </Badge>
+            </div>
+          ) : (
+            `Xin chào, ${user?.fullName ?? 'bạn'}!`
+          )
+        }
         actions={
           <div className="flex items-center gap-2">
             <CvUploadDialog
@@ -258,10 +283,10 @@ export default function DashboardPage() {
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm text-foreground truncate">
-                          {session.jobDescriptionTitle}
+                          {session.templateTitle || 'Buổi phỏng vấn'}
                         </span>
                         <Badge variant="outline" className="text-[10px] shrink-0">
-                          {SESSION_STATUS_LABEL[session.status]}
+                          {SESSION_STATUS_LABEL[session.status] ?? session.status}
                         </Badge>
                         <Badge
                           variant="secondary"
@@ -274,7 +299,7 @@ export default function DashboardPage() {
                             variant="outline"
                             className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/40 bg-emerald-500/10 dark:bg-emerald-500/15 shrink-0"
                           >
-                            {session.overallScore}/100 điểm
+                            {Math.round(session.overallScore)}/100 điểm
                           </Badge>
                         ) : session.status === 'COMPLETED' ? (
                           <Badge
@@ -287,11 +312,12 @@ export default function DashboardPage() {
                         ) : null}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {session.profileHeadline || 'Hồ sơ'} ·{' '}
+                        {session.profileName || 'Hồ sơ'} ·{' '}
                         {SESSION_MODE_LABEL[session.mode] || session.mode} ·{' '}
                         {session.durationMinutes ? `${session.durationMinutes} phút` : '30 phút'} ·{' '}
-                        {formatDate(session.lastActivityAt || session.createdAt)}
+                        {formatDate(session.createdAt)}
                       </p>
+
                     </div>
                     <Button size="sm" asChild className="shrink-0 gap-1 text-xs h-8">
                       <Link to={sessionDetailPath(session.id)}>

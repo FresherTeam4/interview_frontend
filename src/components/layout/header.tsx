@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import {
   BotMessageSquare,
   LifeBuoy,
   LogOut,
   Settings,
-  ShieldCheck,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -21,7 +20,11 @@ import { cn } from '@/lib/utils'
 export default function Header() {
   const { user, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
+
+  const isAdminUser = user?.role === 'ADMIN'
+  const isAdminSection = location.pathname.startsWith('/admin')
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -39,14 +42,24 @@ export default function Header() {
   return (
     <header className="shrink-0 border-b border-border/80 bg-background/85 backdrop-blur-md sticky top-0 z-30">
       <nav className="mx-auto flex h-14 max-w-7xl items-center gap-4 sm:gap-6 px-4">
-        <Link to={ROUTES.home} className="flex items-center gap-2 font-semibold text-base tracking-tight hover:opacity-90 transition-opacity">
+        <Link
+          to={isAdminUser && isAdminSection ? ROUTES.adminOverview : ROUTES.home}
+          className="flex items-center gap-2 font-semibold text-base tracking-tight hover:opacity-90 transition-opacity"
+        >
           <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm shadow-primary/20">
             <BotMessageSquare className="size-4" />
           </div>
-          <span className="font-bold">Mock<span className="text-primary font-black">AI</span></span>
+          <span className="font-bold">
+            Mock<span className="text-primary font-black">AI</span>
+          </span>
+          {isAdminUser && isAdminSection && (
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+              ADMIN
+            </span>
+          )}
         </Link>
 
-        {isAuthenticated ? (
+        {isAuthenticated && !isAdminSection ? (
           <ul className="hidden md:flex items-center gap-1.5 text-sm">
             {NAV_ITEMS.map((item) => (
               <li key={item.to}>
@@ -73,40 +86,24 @@ export default function Header() {
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           {isAuthenticated ? (
             <>
-              {user?.role === 'ADMIN' && (
-                <NavLink
-                  to={ROUTES.adminOverview}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition-all border shadow-xs',
-                      isActive
-                        ? 'bg-amber-500 text-white border-amber-600 shadow-amber-500/20'
-                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/20',
-                    )
-                  }
-                  title="Truy cập Trang Quản trị hệ thống"
-                >
-                  <ShieldCheck className="size-3.5" />
-                  <span className="hidden sm:inline">Quản trị</span>
-                </NavLink>
-              )}
-
               {/* Notification Bell */}
               <NotificationBell />
 
-              {/* Support Dialog */}
-              <CreateSupportTicketDialog
-                trigger={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 text-muted-foreground hover:text-foreground"
-                    title="Gửi yêu cầu hỗ trợ"
-                  >
-                    <LifeBuoy className="size-4" />
-                  </Button>
-                }
-              />
+              {/* Support Dialog (chỉ hiển thị cho người dùng, ẩn với admin) */}
+              {!isAdminUser && (
+                <CreateSupportTicketDialog
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-muted-foreground hover:text-foreground"
+                      title="Gửi yêu cầu hỗ trợ"
+                    >
+                      <LifeBuoy className="size-4" />
+                    </Button>
+                  }
+                />
+              )}
 
               {/* Settings Link */}
               <NavLink
@@ -127,6 +124,15 @@ export default function Header() {
                   {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </div>
                 <span className="max-w-[130px] truncate font-medium text-foreground">{user?.fullName || user?.email}</span>
+                {isAdminUser && (
+                  <Link
+                    to={ROUTES.adminOverview}
+                    className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"
+                    title="Quay lại phân hệ Quản trị"
+                  >
+                    ADMIN
+                  </Link>
+                )}
               </div>
 
               <Button

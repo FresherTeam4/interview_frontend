@@ -7,6 +7,7 @@ import {
   getInterviewTemplate,
   getInterviewTemplates,
   publishInterviewTemplate,
+  submitTemplateForReview,
   unfavoriteInterviewTemplate,
   unpublishInterviewTemplate,
   updateInterviewTemplate,
@@ -141,6 +142,19 @@ export function useUnfavoriteInterviewTemplate() {
     mutationFn: (id: number) => unfavoriteInterviewTemplate(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['interview-templates'] })
+    },
+  })
+}
+
+export function useSubmitTemplateForReview() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, expectedVersion }: { id: number; expectedVersion: number }) =>
+      submitTemplateForReview(id, expectedVersion),
+    onSuccess: (submitted) => {
+      void queryClient.invalidateQueries({ queryKey: ['interview-templates'] })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.interviewTemplate(submitted.id) })
     },
   })
 }

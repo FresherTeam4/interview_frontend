@@ -11,6 +11,7 @@ import {
   Play,
   RefreshCw,
   Sparkles,
+  Star,
   Target,
   TrendingUp,
   UserCheck,
@@ -21,6 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import SessionFeedbackDialog from '@/features/feedback/components/session-feedback-dialog'
 import { getErrorMessage } from '@/api/api-error'
 import { useRetryScoring, useSessionReport } from '@/hooks/use-interview-session'
 import { ROUTES } from '@/constants/routes'
@@ -789,6 +791,28 @@ export default function InterviewReportView({
           </CardContent>
         </Card>
       )}
+
+      {/* 5.5. Đánh giá trải nghiệm phỏng vấn (Feedback Rating) */}
+      <Card className="border border-primary/20 bg-primary/5 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 print:hidden">
+        <div className="space-y-1 text-center sm:text-left">
+          <h4 className="text-sm font-semibold flex items-center justify-center sm:justify-start gap-1.5 text-foreground">
+            <Sparkles className="size-4 text-primary" />
+            Đánh giá trải nghiệm phỏng vấn của bạn
+          </h4>
+          <p className="text-xs text-muted-foreground">
+            Ý kiến của bạn về chất lượng câu hỏi, giọng nói AI và báo cáo giúp mô hình cải thiện tốt hơn.
+          </p>
+        </div>
+        <SessionFeedbackDialog
+          sessionId={session.id}
+          trigger={
+            <Button variant="default" size="sm" className="gap-1.5 text-xs font-semibold shrink-0 shadow-xs">
+              <Star className="size-3.5 fill-amber-300 text-amber-300" />
+              Gửi đánh giá phiên này
+            </Button>
+          }
+        />
+      </Card>
 
       {/* 6. Bottom Navigation and Call to Action */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border bg-muted/20 print:hidden">

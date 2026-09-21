@@ -37,4 +37,9 @@ export const QUERY_KEYS = {
   adminUserDetail: (userId: number) => ['admin', 'users', 'detail', userId] as const,
   adminSessions: (params?: unknown) => ['admin', 'sessions', params] as const,
   adminSessionDetail: (sessionId: number) => ['admin', 'sessions', 'detail', sessionId] as const,
+  adminStaleSessions: (params?: unknown) => ['admin', 'sessions', 'stale', params] as const,
+  adminSessionDiagnostics: (sessionId: number) => ['admin', 'sessions', 'diagnostics', sessionId] as const,
+  adminTemplates: (params?: unknown) => ['admin', 'templates', params] as const,
+  adminTemplateDetail: (templateId: number) => ['admin', 'templates', 'detail', templateId] as const,
 }
+

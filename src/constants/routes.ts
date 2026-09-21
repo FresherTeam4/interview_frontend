@@ -23,7 +23,9 @@ export const ROUTES = {
   adminOverview: '/admin/overview',
   adminUsers: '/admin/users',
   adminSessions: '/admin/sessions',
+  adminTemplates: '/admin/templates',
 } as const
+
 
 export function profileDetailPath(profileId: number): string {
   return `/profile/${profileId}`
