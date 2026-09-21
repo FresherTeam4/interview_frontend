@@ -27,6 +27,16 @@ export type AwaitingAction =
   | 'REPORT'
   | 'NONE'
 
+export type InterviewSessionNextAction =
+  | 'WAIT_FOR_PREPARATION'
+  | 'RETRY_PREPARATION'
+  | 'START'
+  | 'CONTINUE'
+  | 'WAIT_FOR_SCORING'
+  | 'RETRY_SCORING'
+  | 'VIEW_REPORT'
+  | 'NONE'
+
 export type TurnRole = 'INTERVIEWER' | 'CANDIDATE'
 export type TurnInputMode = 'TEXT' | 'VOICE' | 'VOICE_REALTIME'
 
@@ -109,6 +119,86 @@ export interface InterviewSessionSummary {
   overallScore: number | null
   lastActivityAt: string | null
   createdAt: string
+}
+
+export interface InterviewSessionSummaryResponse {
+  id: number
+  status: SessionStatus
+  nextAction: InterviewSessionNextAction
+  templateTitle: string
+  profileName: string
+  languageCode: string
+  durationMinutes: number
+  interviewerStyle: string
+  mode: SessionMode
+  overallScore: number | null
+  technicalScore: number | null
+  communicationScore: number | null
+  startedAt: string | null
+  deadlineAt: string | null
+  endReason: string | null
+  endedAt: string | null
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InterviewSessionPageResponse {
+  items: InterviewSessionSummaryResponse[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export interface InterviewProgressResponse {
+  periodFrom: string
+  periodTo: string
+  periodDays: number
+  totalSessions: number
+  completedSessions: number
+  scoredSessions: number
+  completionRate: number
+  averages: {
+    overall: number | null
+    technical: number | null
+    communication: number | null
+  }
+  overallChangeFromPreviousPeriod: number | null
+  trend: Array<{
+    sessionId: number
+    templateTitle: string
+    completedAt: string
+    overall: number
+    technical: number
+    communication: number
+  }>
+  weakFocusAreas: Array<{
+    code: string
+    name: string
+    averageScore: number
+    scoredSessions: number
+  }>
+}
+
+export type InterviewReadinessCheckStatus = 'PASS' | 'WARNING' | 'FAIL'
+
+export interface InterviewReadinessCheck {
+  code: string
+  status: InterviewReadinessCheckStatus
+  message: string
+}
+
+export interface InterviewReadinessResponse {
+  ready: boolean
+  requestedMode: SessionMode
+  capabilities: {
+    textInput: boolean
+    pushToTalk: boolean
+    realtimeVoice: boolean
+    realtimeFallbackToTurnBased: boolean
+  }
+  checks: InterviewReadinessCheck[]
 }
 
 export interface CreateSessionRequest {

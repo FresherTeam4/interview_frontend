@@ -1,20 +1,37 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   archiveInterviewTemplate,
+  cloneInterviewTemplate,
   confirmInterviewTemplate,
+  favoriteInterviewTemplate,
   getInterviewTemplate,
   getInterviewTemplates,
   publishInterviewTemplate,
+  unfavoriteInterviewTemplate,
   unpublishInterviewTemplate,
   updateInterviewTemplate,
 } from '@/api/template'
 import { QUERY_KEYS } from '@/constants/query-keys'
-import type { UpdateInterviewTemplateRequest } from '@/types/template'
+import type {
+  CloneInterviewTemplateRequest,
+  TemplateListParams,
+  TemplateScope,
+  UpdateInterviewTemplateRequest,
+} from '@/types/template'
 
-export function useInterviewTemplates(scope: 'mine' | 'public' = 'mine', page = 0, size = 20) {
+export function useInterviewTemplates(
+  scopeOrParams: TemplateScope | TemplateListParams = 'mine',
+  page = 0,
+  size = 20,
+) {
+  const queryKey =
+    typeof scopeOrParams === 'string'
+      ? QUERY_KEYS.interviewTemplates(scopeOrParams, page, size)
+      : QUERY_KEYS.templateList(scopeOrParams)
+
   return useQuery({
-    queryKey: QUERY_KEYS.interviewTemplates(scope, page, size),
-    queryFn: () => getInterviewTemplates(scope, page, size),
+    queryKey,
+    queryFn: () => getInterviewTemplates(scopeOrParams, page, size),
   })
 }
 
@@ -90,6 +107,40 @@ export function useArchiveInterviewTemplate() {
     onSuccess: (archived) => {
       void queryClient.invalidateQueries({ queryKey: ['interview-templates'] })
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.interviewTemplate(archived.id) })
+    },
+  })
+}
+
+export function useCloneInterviewTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data?: CloneInterviewTemplateRequest }) =>
+      cloneInterviewTemplate(id, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['interview-templates'] })
+    },
+  })
+}
+
+export function useFavoriteInterviewTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => favoriteInterviewTemplate(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['interview-templates'] })
+    },
+  })
+}
+
+export function useUnfavoriteInterviewTemplate() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => unfavoriteInterviewTemplate(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['interview-templates'] })
     },
   })
 }

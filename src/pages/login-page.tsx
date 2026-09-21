@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { LoginForm } from '@/features/auth/components/login-form'
-import type { LoginFieldErrors } from '@/features/auth/components/login-form'
+import LoginForm, { type LoginFieldErrors } from '@/features/auth/components/login-form'
 import { useAuth } from '@/hooks/use-auth'
 import { isApiError } from '@/api/api-error'
 import { ROUTES } from '@/constants/routes'
@@ -16,9 +15,13 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({})
 
-  function handleFieldChange(field: keyof LoginFieldErrors) {
+  function handleFieldChange(field: string) {
     if (fieldErrors[field]) {
-      setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
+      setFieldErrors((prev) => {
+        const next = { ...prev }
+        delete next[field]
+        return next
+      })
     }
   }
 
@@ -36,7 +39,7 @@ export default function LoginPage() {
     if (!result.success) {
       const errors: LoginFieldErrors = {}
       for (const issue of result.error.issues) {
-        const field = issue.path[0] as keyof LoginFieldErrors
+        const field = issue.path[0] as string
         if (field && !errors[field]) errors[field] = issue.message
       }
       setFieldErrors(errors)
@@ -51,22 +54,24 @@ export default function LoginPage() {
       toast.success('Đăng nhập thành công!')
       navigate(ROUTES.home, { replace: true })
     } catch (err) {
-      if (isApiError(err)) {
-        setError(err.message)
-      } else {
-        setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
-      }
+      if (isApiError(err)) setError(err.message)
+      else setError('Đã có lỗi xảy ra. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  async function handleGoogleLogin(idToken: string) {
+  async function handleGoogleLogin(credentialResponse: { credential?: string }) {
+    if (!credentialResponse.credential) {
+      setError('Đăng nhập Google thất bại: Không nhận được thông tin xác thực.')
+      return
+    }
+
     setError('')
     setIsLoading(true)
 
     try {
-      await loginWithGoogle(idToken)
+      await loginWithGoogle(credentialResponse.credential)
       toast.success('Đăng nhập Google thành công!')
       navigate(ROUTES.home, { replace: true })
     } catch (err) {

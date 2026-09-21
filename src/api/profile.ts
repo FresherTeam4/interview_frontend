@@ -1,5 +1,18 @@
 import { api } from '@/api/client'
-import type { CandidateProfile, ProfileSummary, UpdateProfileRequest } from '@/types/profile'
+import type {
+  CandidateProfile,
+  ProfileSummary,
+  UpdateProfileRequest,
+  CreateCandidateProfileRequest,
+} from '@/types/profile'
+
+/** Tạo hồ sơ ứng viên thủ công không cần tải CV. */
+export async function createManualProfile(
+  data: CreateCandidateProfileRequest,
+): Promise<CandidateProfile> {
+  const res = await api.post<CandidateProfile>('/profiles', data)
+  return res.data
+}
 
 /** Chưa trích xuất CV nào thì trả `200 []`, không phải 404. */
 export async function getCandidateProfiles(): Promise<ProfileSummary[]> {

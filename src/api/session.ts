@@ -3,11 +3,15 @@ import type { PageResponse } from '@/types/jd'
 import type { InterviewReport } from '@/types/report'
 import type {
   CreateSessionRequest,
+  InterviewProgressResponse,
+  InterviewReadinessResponse,
   InterviewSession,
   InterviewSessionAccepted,
+  InterviewSessionPageResponse,
   InterviewSessionSummary,
   SessionListScope,
   SessionMode,
+  SessionStatus,
   SessionVersionRequest,
   SubmitTextAnswerRequest,
   TextAnswerAccepted,
@@ -325,13 +329,11 @@ export async function listSessions(
   }
 }
 
-
 export async function startSession(
   sessionId: number,
   data: SessionVersionRequest,
 ): Promise<InterviewSession> {
   try {
-    // Thử backend InterviewConversationController
     await api.post(`/interview-sessions/${sessionId}/start`)
     return await getSession(sessionId)
   } catch {
@@ -386,7 +388,6 @@ export async function submitTextAnswer(
   const idempotencyKey =
     data.clientTurnId || `ans-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
-  // Gửi trực tiếp đến endpoint AI của backend: POST /api/interview-sessions/{id}/answers
   const res = await api.post<{
     sessionId: number
     status: string
@@ -462,7 +463,7 @@ export async function retrySession(
 
 export async function getSessionReport(sessionId: number): Promise<InterviewReport> {
   const res = await api.get<InterviewReport>(`/interview-sessions/${sessionId}/report`)
-  const score = (res.data as any)?.report?.score ?? res.data?.overallScore
+  const score = (res.data as { report?: { score?: number } })?.report?.score ?? res.data?.overallScore
   if (res.data?.status === 'COMPLETED') {
     updateStoredSessionSummary(sessionId, {
       status: 'COMPLETED',
@@ -478,7 +479,7 @@ export async function getSessionReport(sessionId: number): Promise<InterviewRepo
 
 export async function retryScoring(sessionId: number): Promise<InterviewReport> {
   const res = await api.post<InterviewReport>(`/interview-sessions/${sessionId}/scoring/retry`)
-  const score = (res.data as any)?.report?.score ?? res.data?.overallScore
+  const score = (res.data as { report?: { score?: number } })?.report?.score ?? res.data?.overallScore
   if (res.data?.status) {
     updateStoredSessionSummary(sessionId, {
       status: res.data.status,
@@ -506,7 +507,6 @@ export async function completeSession(
   }
 }
 
-
 export async function abandonSession(
   sessionId: number,
   data: SessionVersionRequest,
@@ -523,4 +523,66 @@ export async function abandonSession(
       createdAt: new Date().toISOString(),
     }
   }
+}
+
+export interface InterviewSessionHistoryParams {
+  keyword?: string
+  status?: SessionStatus
+  mode?: SessionMode
+  createdFrom?: string
+  createdTo?: string
+  page?: number
+  size?: number
+}
+
+export async function getInterviewSessionsHistory(
+  params?: InterviewSessionHistoryParams,
+): Promise<InterviewSessionPageResponse> {
+  const res = await api.get<InterviewSessionPageResponse>('/interview-sessions', {
+    params,
+  })
+  return res.data
+}
+
+export async function getInterviewProgress(days = 30): Promise<InterviewProgressResponse> {
+  const res = await api.get<InterviewProgressResponse>('/interview-sessions/progress', {
+    params: { days },
+  })
+  return res.data
+}
+
+export async function checkInterviewReadiness(
+  data: CreateSessionRequest,
+): Promise<InterviewReadinessResponse> {
+  const res = await api.post<InterviewReadinessResponse>('/interview-sessions/readiness', data)
+  return res.data
+}
+
+export async function cancelInterviewSession(
+  sessionId: number,
+): Promise<{ id: number; status: SessionStatus }> {
+  const res = await api.post<{ id: number; status: SessionStatus }>(
+    `/interview-sessions/${sessionId}/cancel`,
+  )
+  return res.data
+}
+
+export async function retryFailedTurn(
+  sessionId: number,
+  turnId: number,
+): Promise<{
+  sessionId: number
+  candidateTurnId: number
+  status: SessionStatus
+  awaitingAction: string
+  version: number
+}> {
+  const res = await api.post<{
+    sessionId: number
+    candidateTurnId: number
+    status: SessionStatus
+    awaitingAction: string
+    version: number
+  }>(`/interview-sessions/${sessionId}/turns/${turnId}/retry`)
+  return res.data
 }

@@ -71,12 +71,7 @@ export interface ProfileSummary {
 }
 
 /**
- * Body của `PUT /api/profiles/{id}` — thay toàn bộ hồ sơ, luôn gửi đủ cả 3 danh sách (thiếu
- * một danh sách là 400, không phải "giữ nguyên").
- *
- * `id` của từng phần tử là bắt buộc về mặt ngữ nghĩa: có id thì backend UPDATE hàng đó, null thì
- * INSERT, và hàng trong DB mà payload không nhắc tới thì DELETE. Bỏ id đi là xóa rồi chèn lại
- * toàn bộ, làm mất liên kết FK "câu hỏi này sinh ra từ kỹ năng / dự án nào".
+ * Body của `PUT /api/profiles/{id}` — thay toàn bộ hồ sơ, luôn gửi đủ cả 3 danh sách.
  */
 export interface UpdateProfileRequest {
   version: number
@@ -107,5 +102,34 @@ export interface UpdateProfileRequest {
     techStack: string | null
     startDate: string | null
     endDate: string | null
+  }>
+}
+
+/** Body của `POST /api/profiles` tạo hồ sơ thủ công không cần tải CV. */
+export interface CreateCandidateProfileRequest {
+  name: string
+  headline?: string | null
+  summary?: string | null
+  yearsExperience?: number | null
+  targetPosition?: string | null
+  seniorityLevel?: string | null
+  educations: Array<{
+    school: string
+    degree?: string | null
+    fieldOfStudy?: string | null
+    startYear?: number | null
+    endYear?: number | null
+  }>
+  skills: Array<{
+    name: string
+    category?: string | null
+  }>
+  projects: Array<{
+    name: string
+    description?: string | null
+    roleInProject?: string | null
+    techStack?: string | null
+    startDate?: string | null
+    endDate?: string | null
   }>
 }

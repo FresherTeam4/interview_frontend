@@ -61,6 +61,27 @@ export interface UpdateInterviewTemplateRequest {
   content?: JobAnalysis
 }
 
+export interface CloneInterviewTemplateRequest {
+  title?: string
+}
+
+export interface TemplateFavoriteResponse {
+  templateId: number
+  favorite: boolean
+}
+
+export type TemplateScope = 'mine' | 'public' | 'favorites' | 'recent'
+
+export interface TemplateListParams {
+  scope?: TemplateScope
+  keyword?: string
+  seniority?: string
+  language?: string
+  technology?: string
+  page?: number
+  size?: number
+}
+
 export interface InterviewOption {
   code: string
   name: string

@@ -5,15 +5,26 @@ import type {
   UpdateInterviewTemplateRequest,
   InterviewSessionOptions,
   TemplatePageResponse,
+  TemplateFavoriteResponse,
+  CloneInterviewTemplateRequest,
+  TemplateListParams,
+  TemplateScope,
 } from '@/types/template'
 
 export async function getInterviewTemplates(
-  scope: 'mine' | 'public' = 'mine',
+  scopeOrParams: TemplateScope | TemplateListParams = 'mine',
   page = 0,
   size = 20,
 ): Promise<TemplatePageResponse<InterviewTemplateSummary>> {
+  let params: TemplateListParams
+  if (typeof scopeOrParams === 'string') {
+    params = { scope: scopeOrParams, page, size }
+  } else {
+    params = scopeOrParams
+  }
+
   const res = await api.get<TemplatePageResponse<InterviewTemplateSummary>>('/interview-templates', {
-    params: { scope, page, size },
+    params,
   })
   return res.data
 }
@@ -68,6 +79,24 @@ export async function archiveInterviewTemplate(
   const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/archive`, {
     expectedVersion,
   })
+  return res.data
+}
+
+export async function cloneInterviewTemplate(
+  id: number,
+  data?: CloneInterviewTemplateRequest,
+): Promise<InterviewTemplate> {
+  const res = await api.post<InterviewTemplate>(`/interview-templates/${id}/clone`, data ?? {})
+  return res.data
+}
+
+export async function favoriteInterviewTemplate(id: number): Promise<TemplateFavoriteResponse> {
+  const res = await api.post<TemplateFavoriteResponse>(`/interview-templates/${id}/favorite`)
+  return res.data
+}
+
+export async function unfavoriteInterviewTemplate(id: number): Promise<TemplateFavoriteResponse> {
+  const res = await api.delete<TemplateFavoriteResponse>(`/interview-templates/${id}/favorite`)
   return res.data
 }
 

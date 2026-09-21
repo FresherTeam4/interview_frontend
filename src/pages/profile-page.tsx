@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileUp, FileText, UserRoundPen, AlertCircle } from 'lucide-react'
+import { FileUp, FileText, UserRoundPen, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +16,7 @@ import ErrorState from '@/components/error-state'
 import PageHeader from '@/components/page-header'
 import ProfileSummaryCard from '@/features/profile/components/profile-summary-card'
 import CvUploadDialog from '@/features/profile/components/cv-upload-dialog'
+import CreateManualProfileDialog from '@/features/profile/components/create-manual-profile-dialog'
 import CvDocumentList from '@/features/cv/components/cv-document-list'
 import { getErrorMessage } from '@/api/api-error'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
@@ -38,7 +39,6 @@ export default function ProfilePage() {
   const cvFileUrlMutation = useCvFileUrl()
 
   const cvCount = cvsQuery.data?.length ?? 0
-  const isLimitReached = cvCount >= 10
 
   async function handleViewCv(cvId: number) {
     setBusyCvId(cvId)
@@ -113,19 +113,22 @@ export default function ProfilePage() {
             </EmptyMedia>
             <EmptyTitle>Chưa có hồ sơ ứng viên</EmptyTitle>
             <EmptyDescription>
-              Tải CV định dạng PDF lên để AI tự động trích xuất kỹ năng, học vấn và tạo hồ sơ phỏng vấn cho bạn.
+              Tải CV định dạng PDF lên để AI tự động trích xuất, hoặc tự tạo hồ sơ thủ công.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <CvUploadDialog
-              onSuccess={handleRefetchAll}
-              trigger={
-                <Button className="gap-2">
-                  <FileUp className="size-4" />
-                  Tải CV lên ngay
-                </Button>
-              }
-            />
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <CvUploadDialog
+                onSuccess={handleRefetchAll}
+                trigger={
+                  <Button className="gap-2">
+                    <FileUp className="size-4" />
+                    Tải CV lên ngay
+                  </Button>
+                }
+              />
+              <CreateManualProfileDialog onSuccess={handleRefetchAll} />
+            </div>
           </EmptyContent>
         </Empty>
       )
@@ -210,67 +213,54 @@ export default function ProfilePage() {
       <PageHeader
         title="Hồ sơ ứng viên"
         actions={
-          <CvUploadDialog
-            onSuccess={handleRefetchAll}
-            trigger={
-              <Button className="gap-2">
-                <FileUp className="size-4" />
-                Tải CV mới
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            <CreateManualProfileDialog
+              onSuccess={handleRefetchAll}
+              trigger={
+                <Button variant="outline" className="gap-2">
+                  <UserPlus className="size-4" />
+                  Tạo thủ công
+                </Button>
+              }
+            />
+            <CvUploadDialog
+              onSuccess={handleRefetchAll}
+              trigger={
+                <Button className="gap-2">
+                  <FileUp className="size-4" />
+                  Tải CV mới
+                </Button>
+              }
+            />
+          </div>
         }
       />
 
-      {isLimitReached && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-300/80 bg-amber-50/80 p-3.5 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-          <AlertCircle className="size-5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <div className="flex-1">
-            <strong>Đã đạt hạn mức 10/10 CV:</strong> Bạn đã lưu tối đa 10 tệp CV trên hệ thống. Hãy chuyển sang tab{' '}
-            <button
-              type="button"
-              onClick={() => setActiveTab('cvs')}
-              className="font-semibold underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100"
-            >
-              "Tệp CV đã tải ({cvCount}/10)"
-            </button>{' '}
-            để xoá bớt các tệp trùng hoặc bị lỗi trước khi tải thêm CV mới.
-          </div>
-        </div>
-      )}
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex items-center justify-between border-b pb-3">
-          <TabsList>
-            <TabsTrigger value="profiles" className="gap-2">
-              <UserRoundPen className="size-4" />
-              Hồ sơ ứng viên
-              {profilesQuery.data && profilesQuery.data.length > 0 && (
-                <span className="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                  {profilesQuery.data.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="cvs" className="gap-2">
-              <FileText className="size-4" />
-              Tệp CV đã tải
-              <span
-                className={`ml-1 rounded-full px-2 py-0.5 text-xs font-semibold ${isLimitReached
-                    ? 'bg-destructive/15 text-destructive'
-                    : 'bg-muted-foreground/15 text-muted-foreground'
-                  }`}
-              >
-                {cvCount}/10
+        <TabsList className="mb-6">
+          <TabsTrigger value="profiles" className="gap-2">
+            <UserRoundPen className="size-4" />
+            Hồ sơ năng lực
+            {profilesQuery.data && (
+              <span className="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                {profilesQuery.data.length}
               </span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="cvs" className="gap-2">
+            <FileText className="size-4" />
+            Tệp CV đã tải lên
+            <span className="ml-1 rounded-full bg-muted-foreground/15 px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+              {cvCount}/10
+            </span>
+          </TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="profiles" className="pt-4">
+        <TabsContent value="profiles">
           {renderProfilesContent()}
         </TabsContent>
 
-        <TabsContent value="cvs" className="pt-4">
+        <TabsContent value="cvs">
           {renderCvsContent()}
         </TabsContent>
       </Tabs>

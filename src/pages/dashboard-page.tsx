@@ -1,4 +1,20 @@
-import { Award, Briefcase, FileUp, MessageSquareText, UserRoundPen, ArrowRight, Play, Plus, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
+import {
+  Award,
+  Briefcase,
+  FileUp,
+  MessageSquareText,
+  UserRoundPen,
+  ArrowRight,
+  Play,
+  Plus,
+  ChevronRight,
+  CheckCircle2,
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Flame,
+} from 'lucide-react'
 import { Link } from 'react-router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -7,7 +23,7 @@ import CvUploadDialog from '@/features/profile/components/cv-upload-dialog'
 import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { useAuth } from '@/hooks/use-auth'
 import { useCandidateProfiles } from '@/hooks/use-candidate-profile'
-import { useSessions } from '@/hooks/use-interview-session'
+import { useInterviewProgress, useSessions } from '@/hooks/use-interview-session'
 import { useInterviewTemplates } from '@/hooks/use-interview-templates'
 import { ROUTES, sessionDetailPath, profileDetailPath } from '@/constants/routes'
 import { SESSION_MODE_LABEL, SESSION_STATUS_LABEL } from '@/constants/session'
@@ -19,11 +35,13 @@ export default function DashboardPage() {
   const templatesQuery = useInterviewTemplates('mine', 0, 50)
   const activeSessionsQuery = useSessions('ACTIVE', 0, 5)
   const historySessionsQuery = useSessions('HISTORY', 0, 10)
+  const progressQuery = useInterviewProgress(30)
 
   const profiles = profilesQuery.data ?? []
   const templates = templatesQuery.data?.content?.filter((t) => !t.archivedAt) ?? []
   const activeSessions = activeSessionsQuery.data?.items ?? []
   const historySessions = historySessionsQuery.data?.items ?? []
+  const progress = progressQuery.data
 
   // Metrics
   const confirmedProfilesCount = profiles.filter((p) => p.confirmedAt !== null).length
@@ -103,6 +121,100 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Progress & Skills Insight Card */}
+      {progress && (
+        <div className="rounded-xl border border-border/80 bg-card/70 p-4 shadow-xs space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Flame className="size-4" />
+              </div>
+              <h3 className="font-semibold text-sm text-foreground">
+                Tiến độ & Hiệu suất ({progress.periodDays} ngày qua)
+              </h3>
+            </div>
+            {progress.overallChangeFromPreviousPeriod != null && (
+              <Badge
+                variant="outline"
+                className={`text-xs gap-1 ${
+                  progress.overallChangeFromPreviousPeriod >= 0
+                    ? 'text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+                    : 'text-destructive border-destructive/30 bg-destructive/10'
+                }`}
+              >
+                {progress.overallChangeFromPreviousPeriod >= 0 ? (
+                  <TrendingUp className="size-3" />
+                ) : (
+                  <TrendingDown className="size-3" />
+                )}
+                {progress.overallChangeFromPreviousPeriod > 0 ? '+' : ''}
+                {progress.overallChangeFromPreviousPeriod}% so với kỳ trước
+              </Badge>
+            )}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-4">
+            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+              <p className="text-[11px] text-muted-foreground">Tỷ lệ hoàn thành</p>
+              <p className="text-xl font-bold text-foreground">
+                {typeof progress.completionRate === 'number'
+                  ? `${(progress.completionRate <= 1 ? progress.completionRate * 100 : progress.completionRate).toFixed(0)}%`
+                  : 'N/A'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {progress.completedSessions}/{progress.totalSessions} phiên kết thúc
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+              <p className="text-[11px] text-muted-foreground">Điểm trung bình</p>
+              <p className="text-xl font-bold text-foreground">
+                {progress.averages?.overall != null ? `${Number(progress.averages.overall).toFixed(1)}/100` : '—'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {progress.scoredSessions} phiên đã chấm điểm
+              </p>
+            </div>
+
+            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+              <p className="text-[11px] text-muted-foreground">Điểm chuyên môn (Tech)</p>
+              <p className="text-xl font-bold text-foreground">
+                {progress.averages?.technical != null ? `${Number(progress.averages.technical).toFixed(1)}/100` : '—'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Độ chính xác kỹ thuật</p>
+            </div>
+
+            <div className="rounded-lg border bg-muted/20 p-3 space-y-1">
+              <p className="text-[11px] text-muted-foreground">Điểm giao tiếp</p>
+              <p className="text-xl font-bold text-foreground">
+                {progress.averages?.communication != null ? `${Number(progress.averages.communication).toFixed(1)}/100` : '—'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Độ lưu loát & mạch lạc</p>
+            </div>
+          </div>
+
+          {/* Weak Focus Areas */}
+          {progress.weakFocusAreas && progress.weakFocusAreas.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0 font-medium">
+                <AlertCircle className="size-3 text-amber-500" />
+                Kỹ năng cần chú ý luyện tập:
+              </span>
+              {progress.weakFocusAreas.map((skill) => (
+                <Badge
+                  key={skill.code}
+                  variant="outline"
+                  className="text-[11px] bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1"
+                >
+                  <Target className="size-2.5" />
+                  {skill.name} ({Number(skill.averageScore).toFixed(0)}đ)
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main 2-Column Productivity Workspace */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left 2 Cols: Recent Sessions */}
@@ -167,7 +279,7 @@ export default function DashboardPage() {
                         ) : session.status === 'COMPLETED' ? (
                           <Badge
                             variant="outline"
-                            className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/5 shrink-0"
+                            className="text-[10px] font-medium text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-50/5 shrink-0"
                             title="Chưa đủ dữ liệu điểm"
                           >
                             Chưa đủ dữ liệu điểm
@@ -249,7 +361,7 @@ export default function DashboardPage() {
                           {p.headline || 'Hồ sơ chưa có tiêu đề'}
                         </span>
                         {isConfirmed ? (
-                          <CheckCircle2 className="size-3 text-success shrink-0" />
+                          <CheckCircle2 className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         ) : (
                           <AlertCircle className="size-3 text-amber-500 shrink-0" />
                         )}
@@ -258,7 +370,7 @@ export default function DashboardPage() {
                         {p.targetPosition || 'Chưa chọn vị trí'} · {p.skillCount} kỹ năng · {p.projectCount} dự án
                       </p>
                     </div>
-                    <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground shrink-0 transition-colors" />
+                    <ChevronRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                   </Link>
                 )
               })}

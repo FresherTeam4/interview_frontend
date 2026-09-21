@@ -11,6 +11,10 @@ import NotFoundPage from '@/pages/not-found-page'
 import ProfileDetailPage from '@/pages/profile-detail-page'
 import ProfilePage from '@/pages/profile-page'
 import RegisterPage from '@/pages/register-page'
+import ForgotPasswordPage from '@/pages/forgot-password-page'
+import ResetPasswordPage from '@/pages/reset-password-page'
+import VerifyEmailPage from '@/pages/verify-email-page'
+import SettingsPage from '@/pages/settings-page'
 import RolesPage from '@/pages/roles-page'
 import SessionCreatePage from '@/pages/session-create-page'
 import SessionDetailPage from '@/pages/session-detail-page'
@@ -32,6 +36,9 @@ export const router = createBrowserRouter([
         children: [
           { path: ROUTES.login, element: <LoginPage /> },
           { path: ROUTES.register, element: <RegisterPage /> },
+          { path: ROUTES.forgotPassword, element: <ForgotPasswordPage /> },
+          { path: ROUTES.resetPassword, element: <ResetPasswordPage /> },
+          { path: ROUTES.verifyEmail, element: <VerifyEmailPage /> },
         ],
       },
     ],
@@ -65,6 +72,9 @@ export const router = createBrowserRouter([
           { path: ROUTES.sessionCreate, element: <SessionCreatePage /> },
           { path: ROUTES.sessionDetail, element: <SessionDetailPage /> },
 
+          // Cài đặt tài khoản
+          { path: ROUTES.settings, element: <SettingsPage /> },
+
           // Phân hệ Quản trị hệ thống (Admin Portal)
           {
             element: <AdminGuard />,
@@ -88,4 +98,3 @@ export const router = createBrowserRouter([
     ],
   },
 ])
-

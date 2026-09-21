@@ -1,52 +1,46 @@
-import { useState } from 'react'
+import { useState, type ComponentProps } from 'react'
 import { Link } from 'react-router'
 import { Eye, EyeOff } from 'lucide-react'
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
+import { GoogleLogin } from '@react-oauth/google'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from '@/components/ui/card'
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+} from '@/components/ui/field'
 import {
   InputGroup,
-  InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group"
-import { Spinner } from "@/components/ui/spinner"
-import GoogleLoginButton from '@/components/google-login-button'
+} from '@/components/ui/input-group'
+import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import { ROUTES } from '@/constants/routes'
 
-export interface LoginFieldErrors {
-  email?: string
-  password?: string
-}
+export type LoginFieldErrors = Record<string, string>
 
-interface LoginFormProps extends React.ComponentProps<typeof Card> {
+export interface LoginFormProps extends ComponentProps<typeof Card> {
   onSubmitForm?: (e: React.FormEvent<HTMLFormElement>) => void
   isLoading?: boolean
-  error?: string
+  error?: string | null
   fieldErrors?: LoginFieldErrors
-  onFieldChange?: (field: keyof LoginFieldErrors) => void
-  onGoogleLogin?: (credential: string) => void | Promise<void>
+  onFieldChange?: (field: string) => void
+  onGoogleLogin?: (credentialResponse: { credential?: string }) => void
   onGoogleError?: () => void
 }
 
 export function LoginForm({
   onSubmitForm,
-  isLoading = false,
+  isLoading,
   error,
   fieldErrors = {},
   onFieldChange,
@@ -90,12 +84,12 @@ export function LoginForm({
             <Field data-invalid={!!fieldErrors.password}>
               <div className="flex items-center">
                 <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
-                <a
-                  href="#"
-                  className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                <Link
+                  to={ROUTES.forgotPassword}
+                  className="ml-auto inline-block text-sm text-primary underline-offset-4 hover:underline"
                 >
                   Quên mật khẩu?
-                </a>
+                </Link>
               </div>
               <InputGroup>
                 <InputGroupInput
@@ -108,46 +102,49 @@ export function LoginForm({
                   aria-invalid={!!fieldErrors.password}
                   onChange={() => onFieldChange?.('password')}
                 />
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    size="icon-xs"
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                  >
-                    {showPassword ? <EyeOff /> : <Eye />}
-                  </InputGroupButton>
-                </InputGroupAddon>
+                <InputGroupButton
+                  type="button"
+                  variant="ghost"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  {showPassword ? <EyeOff /> : <Eye />}
+                </InputGroupButton>
               </InputGroup>
               <FieldError>{fieldErrors.password}</FieldError>
             </Field>
-            <Field>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Spinner />}
-                Đăng nhập
-              </Button>
-            </Field>
-            <FieldSeparator>Hoặc tiếp tục với</FieldSeparator>
-            <Field>
-              <GoogleLoginButton
-                label="Đăng nhập với Google"
-                onCredential={(credential) => onGoogleLogin?.(credential)}
-                onError={onGoogleError}
-                disabled={isLoading}
-              />
-              <FieldDescription className="text-center">
-                Chưa có tài khoản?{' '}
-                <Link
-                  to={ROUTES.register}
-                  className="underline underline-offset-4 hover:text-primary"
-                >
-                  Đăng ký
-                </Link>
-              </FieldDescription>
-            </Field>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <Spinner className="size-4" /> : 'Đăng nhập'}
+            </Button>
+            <div className="relative my-2 text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
+              <span className="relative z-10 bg-card px-2 text-muted-foreground text-xs uppercase">
+                Hoặc
+              </span>
+            </div>
+            {onGoogleLogin && (
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={onGoogleLogin}
+                  onError={onGoogleError}
+                  text="signin_with"
+                  shape="rectangular"
+                />
+              </div>
+            )}
+            <p className="text-center text-sm text-muted-foreground">
+              Chưa có tài khoản?{' '}
+              <Link
+                to={ROUTES.register}
+                className="underline underline-offset-4 hover:text-primary"
+              >
+                Đăng ký
+              </Link>
+            </p>
           </FieldGroup>
         </form>
       </CardContent>
     </Card>
   )
 }
+
+export default LoginForm

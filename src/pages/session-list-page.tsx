@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { Plus, Clock, History, Play, Award, Loader2, ArrowRight } from 'lucide-react'
+import { Plus, Clock, History, Play, Award, Loader2, ArrowRight, XCircle } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,7 +12,7 @@ import ErrorState from '@/components/error-state'
 import DataPagination from '@/components/data-pagination'
 import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
 import { getErrorMessage } from '@/api/api-error'
-import { useSessions } from '@/hooks/use-interview-session'
+import { useCancelSession, useSessions } from '@/hooks/use-interview-session'
 import { sessionDetailPath } from '@/constants/routes'
 import {
   INTERVIEW_DIFFICULTY_LABEL,
@@ -24,11 +25,26 @@ import type { InterviewSessionSummary, SessionListScope } from '@/types/session'
 const PAGE_SIZE = 6
 
 function SessionCard({ session }: { session: InterviewSessionSummary }) {
+  const cancelMutation = useCancelSession(session.id)
   const isReady = session.status === 'READY'
   const isInProgress = session.status === 'IN_PROGRESS' || session.status === 'PAUSED'
   const isCompleted = session.status === 'COMPLETED'
   const isScoring = session.status === 'SCORING'
   const isGenerating = session.status === 'CREATED' || session.status === 'SCRIPT_GENERATING'
+  const canCancel = isReady || isGenerating
+
+  async function handleCancel(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    const ok = window.confirm('Bạn có chắc muốn hủy phiên phỏng vấn này không?')
+    if (!ok) return
+    try {
+      await cancelMutation.mutateAsync()
+      toast.success('Đã hủy phiên phỏng vấn')
+    } catch (err) {
+      toast.error('Hủy phiên thất bại: ' + getErrorMessage(err))
+    }
+  }
 
   return (
     <Card className="flex flex-col justify-between transition-all hover:shadow-md hover:border-primary/30 h-full">
@@ -113,41 +129,57 @@ function SessionCard({ session }: { session: InterviewSessionSummary }) {
             ) : null}
           </div>
 
-          <Button size="sm" asChild className="shrink-0 gap-1.5 shadow-xs text-xs font-medium">
-            <Link to={sessionDetailPath(session.id)}>
-              {isReady ? (
-                <>
-                  <Play className="size-3.5 fill-current" />
-                  <span>Bắt đầu phỏng vấn</span>
-                </>
-              ) : isInProgress ? (
-                <>
-                  <Play className="size-3.5 fill-current" />
-                  <span>Tiếp tục phỏng vấn</span>
-                </>
-              ) : isScoring ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  <span>Đang chấm điểm...</span>
-                </>
-              ) : isCompleted ? (
-                <>
-                  <Award className="size-3.5" />
-                  <span>Xem báo cáo</span>
-                </>
-              ) : isGenerating ? (
-                <>
-                  <Loader2 className="size-3.5 animate-spin" />
-                  <span>Theo dõi tiến trình</span>
-                </>
-              ) : (
-                <>
-                  <span>Xem chi tiết</span>
-                  <ArrowRight className="size-3.5" />
-                </>
-              )}
-            </Link>
-          </Button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {canCancel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-destructive h-8 px-2"
+                onClick={handleCancel}
+                disabled={cancelMutation.isPending}
+                title="Hủy phiên"
+              >
+                <XCircle className="size-3.5 mr-1" />
+                Hủy
+              </Button>
+            )}
+
+            <Button size="sm" asChild className="shrink-0 gap-1.5 shadow-xs text-xs font-medium h-8">
+              <Link to={sessionDetailPath(session.id)}>
+                {isReady ? (
+                  <>
+                    <Play className="size-3.5 fill-current" />
+                    <span>Bắt đầu</span>
+                  </>
+                ) : isInProgress ? (
+                  <>
+                    <Play className="size-3.5 fill-current" />
+                    <span>Tiếp tục</span>
+                  </>
+                ) : isScoring ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>Đang chấm</span>
+                  </>
+                ) : isCompleted ? (
+                  <>
+                    <Award className="size-3.5" />
+                    <span>Báo cáo</span>
+                  </>
+                ) : isGenerating ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>Tiến trình</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Chi tiết</span>
+                    <ArrowRight className="size-3.5" />
+                  </>
+                )}
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -218,16 +250,16 @@ function SessionTabContent({ scope }: { scope: SessionListScope }) {
         page={sessionsQuery.data.page}
         totalPages={sessionsQuery.data.totalPages}
         totalElements={sessionsQuery.data.totalElements}
-        pageSize={sessionsQuery.data.size}
+        pageSize={PAGE_SIZE}
         onPageChange={(newPage) => setPage(newPage)}
-        itemName="phiên phỏng vấn"
+        itemName="phiên"
       />
     </div>
   )
 }
 
 export default function SessionListPage() {
-  const [scope, setScope] = useState<SessionListScope>('ACTIVE')
+  const [activeTab, setActiveTab] = useState<SessionListScope>('ACTIVE')
 
   return (
     <div className="flex flex-col gap-6">
@@ -238,33 +270,32 @@ export default function SessionListPage() {
             trigger={
               <Button className="gap-2">
                 <Plus className="size-4" />
-                Tạo phiên mới
+                Tạo phiên phỏng vấn
               </Button>
             }
           />
         }
       />
 
-      <Tabs value={scope} onValueChange={(val) => setScope(val as SessionListScope)}>
-        <TabsList className="grid w-full grid-cols-2 sm:w-[320px]">
-          <TabsTrigger value="ACTIVE" className="gap-1.5 text-xs">
-            <Clock className="size-3.5" />
-            Đang hoạt động
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SessionListScope)} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="ACTIVE" className="gap-2">
+            <Clock className="size-4" />
+            Đang diễn ra
           </TabsTrigger>
-          <TabsTrigger value="HISTORY" className="gap-1.5 text-xs">
-            <History className="size-3.5" />
-            Lịch sử đã xong
+          <TabsTrigger value="HISTORY" className="gap-2">
+            <History className="size-4" />
+            Lịch sử
           </TabsTrigger>
         </TabsList>
 
-        <div className="mt-6">
-          <TabsContent value="ACTIVE" className="m-0">
-            <SessionTabContent scope="ACTIVE" />
-          </TabsContent>
-          <TabsContent value="HISTORY" className="m-0">
-            <SessionTabContent scope="HISTORY" />
-          </TabsContent>
-        </div>
+        <TabsContent value="ACTIVE">
+          <SessionTabContent scope="ACTIVE" />
+        </TabsContent>
+
+        <TabsContent value="HISTORY">
+          <SessionTabContent scope="HISTORY" />
+        </TabsContent>
       </Tabs>
     </div>
   )

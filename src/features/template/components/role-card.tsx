@@ -9,6 +9,8 @@ import {
   Eye,
   MoreVertical,
   Archive,
+  Copy,
+  Heart,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card } from '@/components/ui/card'
@@ -25,7 +27,10 @@ import { formatDateTime } from '@/lib/format'
 import { getInterviewTemplate } from '@/api/template'
 import {
   useArchiveInterviewTemplate,
+  useCloneInterviewTemplate,
+  useFavoriteInterviewTemplate,
   usePublishInterviewTemplate,
+  useUnfavoriteInterviewTemplate,
   useUnpublishInterviewTemplate,
 } from '@/hooks/use-interview-templates'
 import { useAuth } from '@/hooks/use-auth'
@@ -38,17 +43,61 @@ interface RoleCardProps {
   onViewDetail: (roleId: number) => void
   onPractice: (role: InterviewTemplateSummary) => void
   onArchive?: (role: InterviewTemplateSummary) => void
+  isFavorited?: boolean
 }
 
-export default function RoleCard({ role, onViewDetail, onPractice, onArchive }: RoleCardProps) {
+export default function RoleCard({
+  role,
+  onViewDetail,
+  onPractice,
+  onArchive,
+  isFavorited = false,
+}: RoleCardProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === ROLES.ADMIN
 
   const archiveMutation = useArchiveInterviewTemplate()
   const publishMutation = usePublishInterviewTemplate()
   const unpublishMutation = useUnpublishInterviewTemplate()
+  const cloneMutation = useCloneInterviewTemplate()
+  const favoriteMutation = useFavoriteInterviewTemplate()
+  const unfavoriteMutation = useUnfavoriteInterviewTemplate()
+
   const [isArchiving, setIsArchiving] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [isCloning, setIsCloning] = useState(false)
+  const [favorited, setFavorited] = useState(isFavorited)
+
+  async function handleToggleFavorite() {
+    try {
+      if (favorited) {
+        await unfavoriteMutation.mutateAsync(role.id)
+        setFavorited(false)
+        toast.success(`Đã bỏ yêu thích: ${role.title}`)
+      } else {
+        await favoriteMutation.mutateAsync(role.id)
+        setFavorited(true)
+        toast.success(`Đã thêm vào mục yêu thích: ${role.title}`)
+      }
+    } catch (err) {
+      toast.error('Thao tác yêu thích thất bại: ' + getErrorMessage(err))
+    }
+  }
+
+  async function handleClone() {
+    setIsCloning(true)
+    try {
+      const cloned = await cloneMutation.mutateAsync({
+        id: role.id,
+        data: { title: `${role.title} (Bản sao)` },
+      })
+      toast.success(`Đã nhân bản thành công vị trí: ${cloned.title}`)
+    } catch (err) {
+      toast.error('Nhân bản vị trí thất bại: ' + getErrorMessage(err))
+    } finally {
+      setIsCloning(false)
+    }
+  }
 
   async function handleTogglePublish() {
     setIsPublishing(true)
@@ -134,50 +183,72 @@ export default function RoleCard({ role, onViewDetail, onPractice, onArchive }: 
             )}
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-muted-foreground hover:text-foreground opacity-60 group-hover:opacity-100 transition-opacity"
-                title="Thao tác khác"
-              >
-                <MoreVertical className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 text-xs">
-              <DropdownMenuItem onClick={() => onViewDetail(role.id)} className="gap-2 cursor-pointer">
-                <Eye className="size-3.5" />
-                Xem & sửa tiêu chí
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onPractice(role)} className="gap-2 cursor-pointer">
-                <Play className="size-3.5 fill-current" />
-                Luyện tập vị trí này
-              </DropdownMenuItem>
-              {isAdmin && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => void handleTogglePublish()}
-                    disabled={isPublishing}
-                    className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
-                  >
-                    <Globe className="size-3.5" />
-                    {role.published ? 'Gỡ công khai' : 'Công khai vị trí'}
-                  </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => void handleQuickArchive()}
-                disabled={isArchiving}
-                className="gap-2 text-destructive focus:text-destructive cursor-pointer"
-              >
-                <Archive className="size-3.5" />
-                Lưu trữ vị trí
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground hover:text-rose-500 transition-colors"
+              onClick={() => void handleToggleFavorite()}
+              title={favorited ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'}
+            >
+              <Heart
+                className={`size-3.5 ${favorited ? 'fill-rose-500 text-rose-500' : ''}`}
+              />
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-muted-foreground hover:text-foreground opacity-60 group-hover:opacity-100 transition-opacity"
+                  title="Thao tác khác"
+                >
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 text-xs">
+                <DropdownMenuItem onClick={() => onViewDetail(role.id)} className="gap-2 cursor-pointer">
+                  <Eye className="size-3.5" />
+                  Xem & sửa tiêu chí
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onPractice(role)} className="gap-2 cursor-pointer">
+                  <Play className="size-3.5 fill-current" />
+                  Luyện tập vị trí này
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => void handleClone()}
+                  disabled={isCloning}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Copy className="size-3.5" />
+                  Nhân bản vị trí
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => void handleTogglePublish()}
+                      disabled={isPublishing}
+                      className="gap-2 cursor-pointer text-blue-600 dark:text-blue-400"
+                    >
+                      <Globe className="size-3.5" />
+                      {role.published ? 'Gỡ công khai' : 'Công khai vị trí'}
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => void handleQuickArchive()}
+                  disabled={isArchiving}
+                  className="gap-2 text-destructive focus:text-destructive cursor-pointer"
+                >
+                  <Archive className="size-3.5" />
+                  Lưu trữ vị trí
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Title & Job Title Subtitle */}

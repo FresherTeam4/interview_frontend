@@ -11,11 +11,27 @@ export const QUERY_KEYS = {
   interviewTemplates: (scope = 'mine', page = 0, size = 20) =>
     ['interview-templates', scope, page, size] as const,
   interviewTemplate: (id: number) => ['interview-templates', id] as const,
+  templateList: (params?: unknown) => ['interview-templates', 'list', params] as const,
   sessions: ['sessions'] as const,
   sessionList: (userId: number | string | null | undefined, scope: string, page: number, size: number) =>
     ['sessions', 'list', userId ?? 'anonymous', scope, page, size] as const,
+  sessionHistory: (params?: unknown) => ['sessions', 'history', params] as const,
+  sessionProgress: (days = 30) => ['sessions', 'progress', days] as const,
   session: (id: number) => ['sessions', id] as const,
+  sessionFeedback: (sessionId: number) => ['sessions', sessionId, 'feedback'] as const,
   sessionReport: (id: number) => ['session-reports', id] as const,
+  // User Account & Lifecycle
+  userAccount: ['account', 'me'] as const,
+  userSessions: ['account', 'sessions'] as const,
+  userDeletionRequest: ['account', 'deletion-request'] as const,
+  // Notifications
+  notifications: (unreadOnly = false, page = 0, size = 20) =>
+    ['notifications', unreadOnly, page, size] as const,
+  unreadNotificationCount: ['notifications', 'unread-count'] as const,
+  // Support tickets
+  supportTickets: (page = 0, size = 20) => ['support-tickets', page, size] as const,
+  supportTicketDetail: (id: number) => ['support-tickets', id] as const,
+  // Admin Portal
   adminOverview: (days: number) => ['admin', 'overview', days] as const,
   adminUsers: (params?: unknown) => ['admin', 'users', params] as const,
   adminUserDetail: (userId: number) => ['admin', 'users', 'detail', userId] as const,

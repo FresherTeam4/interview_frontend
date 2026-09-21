@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   confirmCandidateProfile,
+  createManualProfile,
   getCandidateProfile,
   getCandidateProfiles,
   updateCandidateProfile,
 } from '@/api/profile'
 import { QUERY_KEYS } from '@/constants/query-keys'
-import type { CandidateProfile, UpdateProfileRequest } from '@/types/profile'
+import type {
+  CandidateProfile,
+  CreateCandidateProfileRequest,
+  UpdateProfileRequest,
+} from '@/types/profile'
 
 export function useCandidateProfiles() {
   return useQuery({
@@ -19,8 +24,19 @@ export function useCandidateProfile(profileId: number) {
   return useQuery({
     queryKey: QUERY_KEYS.profile(profileId),
     queryFn: () => getCandidateProfile(profileId),
-    // id lấy từ URL nên có thể là NaN — đừng bắn request rác trong trường hợp đó.
     enabled: Number.isInteger(profileId),
+  })
+}
+
+export function useCreateManualProfile() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateCandidateProfileRequest) => createManualProfile(data),
+    onSuccess: (profile: CandidateProfile) => {
+      queryClient.setQueryData(QUERY_KEYS.profile(profile.id), profile)
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
+    },
   })
 }
 
@@ -30,8 +46,6 @@ export function useUpdateCandidateProfile(profileId: number) {
   return useMutation({
     mutationFn: (data: UpdateProfileRequest) => updateCandidateProfile(profileId, data),
     onSuccess: (profile: CandidateProfile) => {
-      // Response đã là hồ sơ đầy đủ vừa đọc lại từ DB (kèm id của những hàng mới thêm) nên
-      // ghi thẳng vào cache; danh sách thì chỉ cần đánh dấu cũ vì nó đếm số mục con.
       queryClient.setQueryData(QUERY_KEYS.profile(profileId), profile)
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
     },
@@ -46,7 +60,6 @@ export function useConfirmCandidateProfile(profileId: number) {
     onSuccess: (profile: CandidateProfile) => {
       queryClient.setQueryData(QUERY_KEYS.profile(profileId), profile)
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.profiles })
-      // Dòng CV mang nhãn "đã xác nhận" nên phải làm mới theo.
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.cvDocuments })
     },
   })

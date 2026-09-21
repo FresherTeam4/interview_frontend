@@ -1,10 +1,18 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
-import { BotMessageSquare, LogOut, ShieldCheck } from 'lucide-react'
+import {
+  BotMessageSquare,
+  LifeBuoy,
+  LogOut,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import ModeToggle from '@/components/mode-toggle'
+import NotificationBell from '@/components/layout/notification-bell'
+import CreateSupportTicketDialog from '@/features/support/components/create-support-ticket-dialog'
 import { useAuth } from '@/hooks/use-auth'
 import { NAV_ITEMS } from '@/constants/nav'
 import { ROUTES } from '@/constants/routes'
@@ -30,7 +38,7 @@ export default function Header() {
 
   return (
     <header className="shrink-0 border-b border-border/80 bg-background/85 backdrop-blur-md sticky top-0 z-30">
-      <nav className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
+      <nav className="mx-auto flex h-14 max-w-7xl items-center gap-4 sm:gap-6 px-4">
         <Link to={ROUTES.home} className="flex items-center gap-2 font-semibold text-base tracking-tight hover:opacity-90 transition-opacity">
           <div className="size-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm shadow-primary/20">
             <BotMessageSquare className="size-4" />
@@ -39,7 +47,7 @@ export default function Header() {
         </Link>
 
         {isAuthenticated ? (
-          <ul className="flex items-center gap-1.5 text-sm">
+          <ul className="hidden md:flex items-center gap-1.5 text-sm">
             {NAV_ITEMS.map((item) => (
               <li key={item.to}>
                 <NavLink
@@ -62,7 +70,7 @@ export default function Header() {
           </ul>
         ) : null}
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           {isAuthenticated ? (
             <>
               {user?.role === 'ADMIN' && (
@@ -79,22 +87,55 @@ export default function Header() {
                   title="Truy cập Trang Quản trị hệ thống"
                 >
                   <ShieldCheck className="size-3.5" />
-                  <span>Quản trị</span>
+                  <span className="hidden sm:inline">Quản trị</span>
                 </NavLink>
               )}
 
-              <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border/50">
+              {/* Notification Bell */}
+              <NotificationBell />
+
+              {/* Support Dialog */}
+              <CreateSupportTicketDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-foreground"
+                    title="Gửi yêu cầu hỗ trợ"
+                  >
+                    <LifeBuoy className="size-4" />
+                  </Button>
+                }
+              />
+
+              {/* Settings Link */}
+              <NavLink
+                to={ROUTES.settings}
+                className={({ isActive }) =>
+                  cn(
+                    'flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground',
+                    isActive && 'bg-secondary text-secondary-foreground font-semibold',
+                  )
+                }
+                title="Cài đặt tài khoản"
+              >
+                <Settings className="size-4" />
+              </NavLink>
+
+              <div className="hidden lg:flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-full border border-border/50">
                 <div className="size-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px]">
                   {user?.fullName?.charAt(0) || user?.email?.charAt(0) || 'U'}
                 </div>
-                <span className="max-w-[150px] truncate font-medium text-foreground">{user?.fullName || user?.email}</span>
+                <span className="max-w-[130px] truncate font-medium text-foreground">{user?.fullName || user?.email}</span>
               </div>
+
               <Button
                 variant="ghost"
                 size="sm"
                 disabled={loggingOut}
                 onClick={() => void handleLogout()}
-                className="text-muted-foreground hover:text-destructive"
+                className="text-muted-foreground hover:text-destructive size-8 sm:w-auto sm:px-2.5 sm:gap-1.5"
+                title="Đăng xuất"
               >
                 {loggingOut ? <Spinner className="size-4" /> : <LogOut className="size-4" />}
                 <span className="hidden sm:inline text-xs">Đăng xuất</span>

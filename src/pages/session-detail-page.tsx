@@ -1,6 +1,8 @@
 import { Plus, RotateCw } from 'lucide-react'
 import { useParams } from 'react-router'
 import CreateInterviewDialog from '@/features/session/components/wizard/create-interview-dialog'
+import SessionFeedbackDialog from '@/features/feedback/components/session-feedback-dialog'
+import CreateSupportTicketDialog from '@/features/support/components/create-support-ticket-dialog'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -64,6 +66,9 @@ export default function SessionDetailPage() {
         title={`Phiên phỏng vấn${parsedId ? ` #${parsedId}` : ''}`}
         actions={
           <div className="flex items-center gap-2">
+            <SessionFeedbackDialog sessionId={parsedId} />
+            <CreateSupportTicketDialog sessionId={parsedId} />
+
             <Button
               variant="outline"
               size="sm"
